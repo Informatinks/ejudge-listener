@@ -4,7 +4,9 @@ import requests
 from flask import current_app
 from requests import HTTPError
 
-from app import db, create_app
+from app import create_app
+from app.db import db
+
 from app.models import EjudgeRun
 from app.schemas import EjudgeRunSchema
 
@@ -21,13 +23,16 @@ def task(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         app = create_app()
-        app.app_context().push()
-        try:
-            return func(*args, **kwargs)
-        except:
-            app.logger.exception('Unhandled exception')
+        with app.app_context():
+            try:
+                return func(*args, **kwargs)
+            except:
+                app.logger.exception('Unhandled exception')
 
     return wrapper
+
+
+run_schema = EjudgeRunSchema()
 
 
 @task
@@ -51,6 +56,4 @@ def load_run(contest_id, run_id):
     except Exception as e:
         print(e)  # todo catch error
 
-    run_schema = EjudgeRunSchema()
-    json = run_schema.dump(run).data
-    return json
+    return run_schema.dump(run).data

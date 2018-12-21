@@ -1,13 +1,11 @@
 import rq
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
 from redis import Redis
 
+from app.db import db
 from app.error_handler import register_error_handlers
 from app.routes import setup_routes
 from config import Config
-
-db = SQLAlchemy()
 
 
 def create_app(config_class=Config):

@@ -9,7 +9,7 @@ DEFAULT_MESSAGE = (
 
 
 def jsonify_http_exception(e: HTTPException):
-    """Convert raised werkzeug.exceptons.* into JSON.
+    """Convert raised werkzeug.exceptions.* into JSON.
 
     Additional doc: http://flask.pocoo.org/snippets/83/
     """
