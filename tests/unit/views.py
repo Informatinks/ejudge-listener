@@ -16,7 +16,7 @@ def random_id():
     return random.randint(MIN_ID, MAX_ID)
 
 
-@patch('app.views.current_app.task_queue.enqueue')
+@patch('app.tasks.send_run.queue')
 class ViewTest(TestCase):
     valid_int_request = {'contest_id': random_id(), 'run_id': random_id()}
 
