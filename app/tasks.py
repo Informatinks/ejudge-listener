@@ -1,41 +1,16 @@
-import functools
-
 import requests
 from flask import current_app
 from requests import HTTPError
 
-from app import create_app
 from app.db import db
-
 from app.models import EjudgeRun
+from app.plugins import rq
 from app.schemas import EjudgeRunSchema
-
-
-def task(func):
-    """
-    This function is going to run in a separate process that is controlled by RQ,
-    not Flask, so if any unexpected errors occur the task will abort, RQ will display
-    the error to the console and then will go back to wait for new jobs. So basically,
-    unless you are watching the output of the RQ worker or logging it to a file, you
-    will never find out there was an error.
-    """
-
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        app = create_app()
-        with app.app_context():
-            try:
-                return func(*args, **kwargs)
-            except:
-                app.logger.exception('Unhandled exception')
-
-    return wrapper
-
 
 run_schema = EjudgeRunSchema()
 
 
-@task
+@rq.job # todo test :)
 def send_run(contest_id, run_id, json=None):
     content = json or load_run(contest_id, run_id)
     r = requests.post('ejudge-front', json=content)  # todo url for ejudge-front
