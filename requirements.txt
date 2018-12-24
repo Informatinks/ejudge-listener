@@ -1,6 +1,8 @@
 certifi==2018.11.29
 chardet==3.0.4
 click==7.0
+croniter==0.3.26
+flask-rq2==18.3
 flask-sqlalchemy==2.3.2
 flask==1.0.2
 idna==2.8
@@ -9,9 +11,12 @@ jinja2==2.10
 markupsafe==1.1.0
 marshmallow==2.16.3
 pymysql==0.9.3
+python-dateutil==2.7.5
 redis==3.0.1
 requests==2.21.0
+rq-scheduler==0.9
 rq==0.13.0
+six==1.12.0
 sqlalchemy==1.2.15
 urllib3==1.24.1
 webargs==4.1.3

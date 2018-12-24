@@ -1,4 +1,6 @@
-from app.db import db
+from flask_sqlalchemy import SQLAlchemy
+
+db = SQLAlchemy()
 
 
 class EjudgeRun(db.Model):

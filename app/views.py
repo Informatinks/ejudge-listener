@@ -1,10 +1,9 @@
 from webargs import fields
 from webargs.flaskparser import use_args
 
-from app.tasks import send_run
+from app.plugins import rq
 from app.utils import jsonify
 
-TASK_REFERENCE = 'app.tasks.send_run'
 
 update_run_args = {
     'contest_id': fields.Int(required=True),
@@ -14,5 +13,5 @@ update_run_args = {
 
 @use_args(update_run_args)
 def update_run(args):
-    send_run.queue(TASK_REFERENCE, **args)
+    rq.get_queue().enqueue('app.tasks.send_run', **args)
     return jsonify({})

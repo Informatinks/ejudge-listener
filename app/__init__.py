@@ -1,9 +1,12 @@
 from flask import Flask
-from app.db import db
+
+
 from app.error_handler import register_error_handlers
+from app.models import db
 from app.plugins import rq
 from app.routes import setup_routes
 from config import Config
+
 
 
 def create_app(config_class=Config):
