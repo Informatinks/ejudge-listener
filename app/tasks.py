@@ -19,18 +19,17 @@ def send_run(contest_id, run_id, json=None):
             r = requests.post('ejudge-front', json=content, timeout=3)
             r.raise_for_status()
         except NoResultFound:
-            current_app.logger.exception(
+            log_msg = (
                 f"Run with contest_id={contest_id}, run_id={run_id} "
                 f"doesn't exist, task requeued"
             )
+            current_app.logger.exception(log_msg)
         except RequestException:
-            current_app.logger.exception(
-                'Ejudge-front bad response or timeout, task requeued'
-            )
+            log_msg = 'Ejudge-front bad response or timeout, task requeued'
+            current_app.logger.exception(log_msg)
         else:
-            current_app.logger.info(
-                f'Run with contest_id={contest_id}, run_id={run_id} sended'
-            )
+            log_msg = f'Run with contest_id={contest_id}, run_id={run_id} sended'
+            current_app.logger.info(log_msg)
             return
         q = rq.get_queue()
         q.enqueue(send_run, contest_id, run_id, json)
