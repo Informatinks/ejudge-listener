@@ -10,10 +10,6 @@ from app.plugins import rq
 
 run_schema = EjudgeRunSchema()
 
-NO_RESULT_FOUND_MSG = "Run with contest_id={}, run_id={} doesn't exist, task requeued"
-BAD_RESPONSE_MSG = 'Ejudge-front bad response or timeout, task requeued'
-OK_MSG = 'Run with contest_id={}, run_id={} sended'
-
 
 def send_run(contest_id, run_id, json=None):
     app = create_app()
@@ -23,11 +19,18 @@ def send_run(contest_id, run_id, json=None):
             r = requests.post('ejudge-front', json=content, timeout=3)
             r.raise_for_status()
         except NoResultFound:
-            current_app.logger.exception(NO_RESULT_FOUND_MSG.format(contest_id, run_id))
+            current_app.logger.exception(
+                f"Run with contest_id={contest_id}, run_id={run_id} "
+                f"doesn't exist, task requeued"
+            )
         except RequestException:
-            current_app.logger.exception(BAD_RESPONSE_MSG)
+            current_app.logger.exception(
+                'Ejudge-front bad response or timeout, task requeued'
+            )
         else:
-            current_app.logger.info(OK_MSG.format(contest_id, run_id))
+            current_app.logger.info(
+                f'Run with contest_id={contest_id}, run_id={run_id} sended'
+            )
             return
         q = rq.get_queue()
         q.enqueue(send_run, contest_id, run_id, json)
