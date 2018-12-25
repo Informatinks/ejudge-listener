@@ -16,6 +16,7 @@ requests = "*"
 rq = "*"
 webargs = "*"
 flask-rq2 = "*"
+flask-pymongo = "*"
 
 [requires]
 python_version = "3.6"

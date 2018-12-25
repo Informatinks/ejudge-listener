@@ -1,7 +1,9 @@
+-i https://pypi.org/simple
 certifi==2018.11.29
 chardet==3.0.4
 click==7.0
 croniter==0.3.26
+flask-pymongo==2.2.0
 flask-rq2==18.3
 flask-sqlalchemy==2.3.2
 flask==1.0.2
@@ -10,6 +12,7 @@ itsdangerous==1.1.0
 jinja2==2.10
 markupsafe==1.1.0
 marshmallow==2.16.3
+pymongo==3.7.2
 pymysql==0.9.3
 python-dateutil==2.7.5
 redis==3.0.1
