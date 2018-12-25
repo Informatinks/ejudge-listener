@@ -1,0 +1,21 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+flask-testing = "*"
+fakeredis = "*"
+isort = "*"
+
+[packages]
+flask = "*"
+flask-sqlalchemy = "*"
+pymysql = "*"
+requests = "*"
+rq = "*"
+webargs = "*"
+flask-rq2 = "*"
+
+[requires]
+python_version = "3.6"
