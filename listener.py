@@ -1,5 +1,5 @@
 from app import create_app
 
-# todo logging
+# TODO: logging
 
 app = create_app()

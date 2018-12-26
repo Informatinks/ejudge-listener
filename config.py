@@ -5,12 +5,12 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 
 class Config:
 
-    # todo config for logger
+    # TODO: config for logger
     SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     RQ_REDIS_URL = os.getenv('REDIS_URL', 'redis://')
-    # todo add queue name to config, instead of 'default'
+    # TODO: add queue name to config, instead of 'default'
     RQ_QUEUES = ['default']
 
 
