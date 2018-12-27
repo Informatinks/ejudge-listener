@@ -1,7 +1,4 @@
 import requests
-import uuid
-
-from bson import ObjectId
 from flask import current_app
 from requests import RequestException
 from sqlalchemy.orm.exc import NoResultFound
@@ -9,19 +6,19 @@ from sqlalchemy.orm.exc import NoResultFound
 from app import create_app
 from app.models import EjudgeRun
 from app.models import db
-from app.plugins import rq, mongo
+from app.plugins import mongo, rq
 from app.protocol.protocol import get_full_protocol
 from app.schemas import EjudgeRunSchema
 
 run_schema = EjudgeRunSchema()
 
 
-def send_run(contest_id, run_id, json=None):
+def send_run(contest_id: int, run_id: int, json=None) -> None:
     app = create_app()
     with app.app_context():
         try:
-            content = json or load_run(contest_id, run_id)
-            r = requests.post('ejudge-front', json=content, timeout=3)
+            json = json or form_json(contest_id, run_id)
+            r = requests.post('ejudge-front', json=json, timeout=3)
             r.raise_for_status()
         except NoResultFound:
             log_msg = (
@@ -40,22 +37,31 @@ def send_run(contest_id, run_id, json=None):
         q.enqueue(send_run, contest_id, run_id, json)
 
 
-def load_run(contest_id: int, run_id: int) -> dict:
+def form_json(contest_id, run_id) -> dict:
+    run = load_run(contest_id, run_id)
+    protocol_id = put_protocol_to_mongo(run)
+    data = run_schema.dump(run).data
+    data['protocol_id'] = protocol_id
+    return data
+
+
+def load_run(contest_id: int, run_id: int) -> EjudgeRun:
+    """
+    :return: EjudgeRun or throw NoResultFound.
+    """
     run = (
         db.session.query(EjudgeRun)
         .filter_by(contest_id=contest_id)
         .filter_by(run_id=run_id)
         .one()
     )
-    data = run_schema.dump(run).data
-    protocol_id = put_protocol_to_mongo(run)
-    data['protocol_id'] = protocol_id.binary
-    return data
+    return run
 
 
-def put_protocol_to_mongo(run):
-    protocol = get_full_protocol(run)  # TODO: refactoring
-    random_id = uuid.uuid4().hex
-    protocol_id: ObjectId = mongo.db.protocol.insert_one(protocol).inserted_id
-
-    return protocol_id
+def put_protocol_to_mongo(run: EjudgeRun) -> str:
+    """
+    :return: hex encoded version of ObjectId.
+    """
+    protocol = get_full_protocol(run)
+    protocol_id = mongo.db.protocol.insert_one(protocol).inserted_id
+    return str(protocol_id)
