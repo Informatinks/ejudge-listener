@@ -41,6 +41,9 @@ ENV/
 env.bak/
 venv.bak/
 
+# settings
+local-settings.cfg
+
 
 # IDEs
 .idea

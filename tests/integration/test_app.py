@@ -4,8 +4,8 @@ import time
 from flask import url_for
 from flask_testing import TestCase
 
-from app import create_app, db
-from app.models import EjudgeRun
+from ejudge_listener import create_app, db
+from ejudge_listener.models import EjudgeRun
 from config import TestConfig
 
 

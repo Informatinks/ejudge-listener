@@ -2,7 +2,7 @@ import traceback
 from collections import OrderedDict
 from flask import jsonify
 
-from app.models import EjudgeRun
+from ejudge_listener.models import EjudgeRun
 
 
 def get_full_protocol(run: EjudgeRun):

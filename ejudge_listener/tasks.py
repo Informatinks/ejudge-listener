@@ -3,12 +3,12 @@ from flask import current_app
 from requests import RequestException
 from sqlalchemy.orm.exc import NoResultFound
 
-from app import create_app
-from app.models import EjudgeRun
-from app.models import db
-from app.plugins import mongo, rq
-from app.protocol.protocol import get_full_protocol
-from app.schemas import EjudgeRunSchema
+from ejudge_listener import create_app
+from ejudge_listener.models import EjudgeRun
+from ejudge_listener.models import db
+from ejudge_listener.plugins import mongo, rq
+from ejudge_listener.protocol.protocol import get_full_protocol
+from ejudge_listener.schemas import EjudgeRunSchema
 
 run_schema = EjudgeRunSchema()
 
@@ -37,7 +37,7 @@ def send_run(contest_id: int, run_id: int, json=None) -> None:
         q.enqueue(send_run, contest_id, run_id, json)
 
 
-def form_json(contest_id, run_id) -> dict:
+def form_json(contest_id: int, run_id: int) -> dict:
     run = load_run(contest_id, run_id)
     protocol_id = put_protocol_to_mongo(run)
     data = run_schema.dump(run).data

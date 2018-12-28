@@ -1,7 +1,7 @@
 from flask import Flask, current_app
 from werkzeug.exceptions import HTTPException
 
-from app.utils import jsonify
+from ejudge_listener.utils import jsonify
 
 DEFAULT_MESSAGE = (
     'Oops! An error happened. We are already ' 'trying to resolve the problem!'

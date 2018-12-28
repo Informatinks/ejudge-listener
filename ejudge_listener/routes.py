@@ -1,4 +1,4 @@
-from app.views import update_run
+from ejudge_listener.views import update_run
 
 
 def setup_routes(app):

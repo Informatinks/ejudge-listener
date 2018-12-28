@@ -5,7 +5,7 @@ from unittest.mock import patch
 from flask import url_for
 from flask_testing import TestCase
 
-from app import create_app
+from ejudge_listener import create_app
 from config import TestConfig
 
 MIN_ID = 1

@@ -5,8 +5,8 @@ import gzip
 import zipfile
 
 
-from app.protocol.ejudge_archive import EjudgeArchiveReader
-from app.protocol.run import (
+from ejudge_listener.protocol.ejudge_archive import EjudgeArchiveReader
+from ejudge_listener.protocol.run import (
     safe_open,
     submit_path,
     sources_path,

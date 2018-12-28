@@ -1,10 +1,10 @@
 from webargs import fields
 from webargs.flaskparser import use_args
 
-from app.plugins import rq
-from app.utils import jsonify
+from ejudge_listener.plugins import rq
+from ejudge_listener.utils import jsonify
 
-
+# noinspection PyUnresolvedReferences
 update_run_args = {
     'contest_id': fields.Int(required=True),
     'run_id': fields.Int(required=True),
@@ -13,5 +13,5 @@ update_run_args = {
 
 @use_args(update_run_args)
 def update_run(args):
-    rq.get_queue().enqueue('app.tasks.send_run', **args)
+    rq.get_queue().enqueue('ejudge_listener.tasks.send_run', **args)
     return jsonify({})
