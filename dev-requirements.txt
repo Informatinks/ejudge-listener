@@ -7,4 +7,5 @@ itsdangerous==1.1.0
 jinja2==2.10
 markupsafe==1.1.0
 redis==3.0.1
+teamcity-messages==1.21
 werkzeug==0.14.1
