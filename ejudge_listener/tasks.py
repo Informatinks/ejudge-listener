@@ -1,3 +1,5 @@
+import sys
+
 import requests
 from flask import current_app
 from requests import RequestException
@@ -10,52 +12,57 @@ from ejudge_listener.plugins import mongo, rq
 from ejudge_listener.protocol.protocol import get_full_protocol
 from ejudge_listener.schemas import EjudgeRunSchema
 
+# TODO: Add doc.
+NON_TERMINAL_RUN_STATUSES = {96, 98}
+
+
 run_schema = EjudgeRunSchema()
 
 
-def send_run(contest_id: int, run_id: int, json=None) -> None:
+def process_and_send_run(contest_id: int, run_id: int, json: dict = None) -> None:
     app = create_app()
     with app.app_context():
-        try:
-            json = json or form_json(contest_id, run_id)
-            r = requests.post('ejudge-front', json=json, timeout=3)
-            r.raise_for_status()
-        except NoResultFound:
-            log_msg = (
-                f"Run with contest_id={contest_id}, run_id={run_id} "
-                f"doesn't exist, task requeued"
-            )
-            current_app.logger.exception(log_msg)
-        except RequestException:
-            log_msg = 'Ejudge-front bad response or timeout, task requeued'
-            current_app.logger.exception(log_msg)
+        if json:
+            send_run(contest_id, run_id, json)
         else:
-            log_msg = f'Run with contest_id={contest_id}, run_id={run_id} sended'
-            current_app.logger.info(log_msg)
-            return
+            data = process_run(contest_id, run_id)
+            send_run(contest_id, run_id, data)
+
+
+def send_run(contest_id: int, run_id: int, json: dict):
+    try:
+        r = requests.post('ejudge-front', json=json, timeout=3)
+        r.raise_for_status()
+    except RequestException:
+        log_msg = 'Ejudge-front bad response or timeout, task requeued'
+        current_app.logger.exception(log_msg)
         q = rq.get_queue()
-        q.enqueue(send_run, contest_id, run_id, json)
+        if json['status'] in NON_TERMINAL_RUN_STATUSES:
+            q.enqueue(process_and_send_run, contest_id, run_id, None)
+        else:
+            q.enqueue(process_and_send_run, contest_id, run_id, json)
+    log_msg = f'Run with contest_id={contest_id}, run_id={run_id} sended successfully'
+    current_app.logger.info(log_msg)
 
 
-def form_json(contest_id: int, run_id: int) -> dict:
-    run = load_run(contest_id, run_id)
-    protocol_id = put_protocol_to_mongo(run)
-    data = run_schema.dump(run).data
-    data['protocol_id'] = protocol_id
-    return data
-
-
-def load_run(contest_id: int, run_id: int) -> EjudgeRun:
-    """
-    :return: EjudgeRun or throw NoResultFound.
-    """
-    run = (
-        db.session.query(EjudgeRun)
-        .filter_by(contest_id=contest_id)
-        .filter_by(run_id=run_id)
-        .one()
-    )
-    return run
+def process_run(contest_id: int, run_id: int) -> dict:
+    try:
+        run = (
+            db.session.query(EjudgeRun)
+            .filter_by(contest_id=contest_id)
+            .filter_by(run_id=run_id)
+            .one()
+        )
+    except NoResultFound:
+        # Critical error, log and exit. Usually we already have run in database.
+        log_msg = f'Run with contest_id={contest_id}, run_id={run_id} doesn\'t exist'
+        current_app.logger.exception(log_msg)
+        sys.exit(log_msg)
+    else:
+        protocol_id = put_protocol_to_mongo(run)
+        data = run_schema.dump(run).data
+        data['protocol_id'] = protocol_id
+        return data
 
 
 def put_protocol_to_mongo(run: EjudgeRun) -> str:

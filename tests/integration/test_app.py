@@ -1,5 +1,4 @@
 import unittest
-import time
 
 from flask import url_for
 from flask_testing import TestCase
