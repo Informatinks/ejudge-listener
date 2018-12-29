@@ -11,4 +11,4 @@ class EjudgeRunSchema(Schema):
     test_num = fields.Integer()
     create_time = fields.DateTime()
     last_change_time = fields.DateTime()
-    protocol_id = fields.String()
+    mongo_protocol_id = fields.String()

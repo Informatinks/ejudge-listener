@@ -55,9 +55,9 @@ def process_run(contest_id: int, run_id: int) -> dict:
         log_msg = f'Run with contest_id={contest_id}, run_id={run_id} doesn\'t exist'
         current_app.logger.exception(log_msg)
         sys.exit(0)
-    protocol_id = put_protocol_to_mongo(run)
+    mongo_protocol_id = put_protocol_to_mongo(run)
     data = run_schema.dump(run).data
-    data.protocol_id = protocol_id
+    data.mongo_protocol_id = mongo_protocol_id
     return data
 
 
