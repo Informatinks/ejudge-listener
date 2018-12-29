@@ -5,8 +5,8 @@ from flask import jsonify
 from ejudge_listener.models import EjudgeRun
 
 
-def get_full_protocol(run: EjudgeRun):
-    protocol = get_protocol(run).json
+def get_full_protocol(run: EjudgeRun) -> dict:
+    protocol = get_protocol(run)
     if protocol.get('result') == 'error':
         return protocol
 
@@ -19,7 +19,7 @@ def get_full_protocol(run: EjudgeRun):
     if compiler_output:
         full_protocol['compiler_output'] = protocol['compiler_output']
 
-    return jsonify(full_protocol)
+    return full_protocol
 
 
 def get_protocol(run: EjudgeRun):
@@ -34,16 +34,13 @@ def get_protocol(run: EjudgeRun):
                     res[str_num] = run.get_test_full_protocol(str_num)
                 else:
                     res[str_num] = run.tests[str_num]
-        return jsonify(
-            {'tests': res, 'host': run.host, 'compiler_output': run.compiler_output}
-        )
+        return {'tests': res, 'host': run.host, 'compiler_output': run.compiler_output}
+
     except Exception as e:
-        return jsonify(
-            {
-                'result': 'error',
-                'message': run.compilation_protocol,
-                'error': e.__str__(),
-                'stack': traceback.format_exc(),
-                'protocol': run.protocol,
-            }
-        )
+        return {
+            'result': 'error',
+            'message': run.compilation_protocol,
+            'error': e.__str__(),
+            'stack': traceback.format_exc(),
+            'protocol': run.protocol,
+        }
