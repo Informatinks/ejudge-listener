@@ -336,7 +336,8 @@ class EjudgeRun(db.Model):
                 self.judge_tests_info[number] = judge_info
                 self.tests[number] = test
             try:
-                # print([test['time'] for test in self.tests.values()] + [test['real_time'] for test in self.tests.values()])
+                # print([test['time'] for test in self.tests.values()] +
+                # [test['real_time'] for test in self.tests.values()])
                 self.maxtime = max(
                     [test['time'] for test in self.tests.values()]
                     + [test['real_time'] for test in self.tests.values()]

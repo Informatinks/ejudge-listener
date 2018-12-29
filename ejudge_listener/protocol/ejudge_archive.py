@@ -97,10 +97,9 @@ class EjudgeArchiveReader:
                     self.archive_header["version"], self.VERSION
                 )
             )
+        # list of entry_headers with sequence like in file
+        self.entry_headers_list = list()
 
-        self.entry_headers_list = (
-            list()
-        )  # list of entry_headers with sequence like in file
         self.files_positions = dict()  # filename -> position in ejudge archive
 
         while self.file.tell() < self.arch_size:

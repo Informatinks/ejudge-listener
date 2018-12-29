@@ -20,28 +20,6 @@ def read_file_unknown_encoding(file_name, size=255):
     return res
 
 
-def get_protocol_from_file(filename):
-    if os.path.isfile(filename):
-        myopen = open
-    else:
-        filename += '.gz'
-        myopen = gzip.open
-    try:
-        xml_file = myopen(filename, 'rb', encoding='utf-8')
-        try:
-            xml_file.readline()
-            xml_file.readline()
-            res = xml_file.read()
-            try:
-                return str(res, encoding='UTF-8')
-            except TypeError:
-                return res
-        except Exception as e:
-            return str(e)
-    except IOError as e:
-        return str(e)
-
-
 def lazy(func):
     """
     A decorator function designed to wrap attributes that need to be
@@ -193,7 +171,8 @@ def get_status_by_id(status_id):
 
 
 def submit_path(tp, contest_id, submit_id):
-    # path to archive file with path to archive directory = tp, look up audit_path etc constants
+    # path to archive file with path to archive directory = tp,
+    # look up audit_path etc constants
     return os.path.join(
         contest_path,
         '0' * (6 - len(str(contest_id))) + str(contest_id),

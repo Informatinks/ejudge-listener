@@ -17,5 +17,4 @@ def create_app(config_class=None):
     rq.init_app(app)
     setup_routes(app)
     register_error_handlers(app)
-    current_app.logger.info("ejudge-listener app created")
     return app
