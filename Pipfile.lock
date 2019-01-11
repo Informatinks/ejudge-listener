@@ -243,11 +243,11 @@
         },
         "webargs": {
             "hashes": [
-                "sha256:63320c7c1d82273a73723b5a522db3e19c18315ce0e597dcb8c8ccd999240165",
-                "sha256:7c697e8a81a1a67ef3cbb3b0267466943ab1a93082ae8a076e49aed4dea0759f"
+                "sha256:0bd93a8f180907a040631b592d10ca25b8a243d9a71921a2ec363b52f0a3f441",
+                "sha256:62a84a1e2e42ad7e6f2af4a1f96379bb05f8e26b7f86deebda0e2dad4187c591"
             ],
             "index": "pypi",
-            "version": "==4.2.0"
+            "version": "==5.1.0"
         },
         "werkzeug": {
             "hashes": [
