@@ -35,8 +35,7 @@ def send_json_to_front(contest_id: int, run_id: int, json: dict):
         q = rq.get_queue()
         if json['status'] in TERMINAL_RUN_STATUSES:
             q.enqueue(send_run, contest_id, run_id, json)
-        else:
-            q.enqueue(send_run, contest_id, run_id, None)
+            return
     log_msg = f'Run with contest_id={contest_id}, run_id={run_id} sended successfully'
     current_app.logger.info(log_msg)
 
