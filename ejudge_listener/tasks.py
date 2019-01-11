@@ -12,7 +12,6 @@ from ejudge_listener.protocol.protocol import get_full_protocol
 from ejudge_listener.protocol.run_statuses import TERMINAL_RUN_STATUSES
 from ejudge_listener.schemas import EjudgeRunSchema
 
-
 run_schema = EjudgeRunSchema()
 
 
@@ -44,12 +43,10 @@ def send_json_to_front(contest_id: int, run_id: int, json: dict):
 
 def process_run(contest_id: int, run_id: int) -> dict:
     try:
-        run = (
-            db.session.query(EjudgeRun)
-            .filter_by(contest_id=contest_id)
-            .filter_by(run_id=run_id)
-            .one()
-        )
+        run = db.session.query(EjudgeRun) \
+              .filter_by(contest_id=contest_id) \
+              .filter_by(run_id=run_id) \
+              .one()
     except NoResultFound:
         # Critical error, log and exit. Usually we already have run in database.
         log_msg = f'Run with contest_id={contest_id}, run_id={run_id} doesn\'t exist'
