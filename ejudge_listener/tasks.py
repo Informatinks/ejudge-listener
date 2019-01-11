@@ -53,8 +53,8 @@ def process_run(contest_id: int, run_id: int) -> dict:
         current_app.logger.exception(log_msg)
         sys.exit(0)
     mongo_protocol_id = put_protocol_to_mongo(run)
+    run.mongo_protocol_id = mongo_protocol_id
     data = run_schema.dump(run).data
-    data.mongo_protocol_id = mongo_protocol_id
     return data
 
 
