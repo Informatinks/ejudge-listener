@@ -48,6 +48,7 @@ def process_run(contest_id: int, run_id: int) -> dict:
               .one()
     except NoResultFound:
         # Critical error, log and exit. Usually we already have run in database.
+        db.session.rollback()
         log_msg = f'Run with contest_id={contest_id}, run_id={run_id} doesn\'t exist'
         current_app.logger.exception(log_msg)
         sys.exit(0)
