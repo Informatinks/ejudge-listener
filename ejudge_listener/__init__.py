@@ -1,4 +1,4 @@
-from flask import Flask, current_app
+from flask import Flask
 
 from ejudge_listener.error_handler import register_error_handlers
 from ejudge_listener.models import db

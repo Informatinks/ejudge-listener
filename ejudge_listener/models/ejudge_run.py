@@ -4,7 +4,7 @@ import xml
 import gzip
 import zipfile
 
-
+from ejudge_listener.models import db
 from ejudge_listener.protocol.ejudge_archive import EjudgeArchiveReader
 from ejudge_listener.protocol.run import (
     safe_open,
@@ -17,10 +17,6 @@ from ejudge_listener.protocol.run import (
     protocols_path,
     get_protocol_from_file,
 )
-
-from flask_sqlalchemy import SQLAlchemy
-
-db = SQLAlchemy()
 
 
 def lazy(func):
@@ -46,17 +42,7 @@ def lazy(func):
 
 
 class EjudgeRun(db.Model):
-    __table_args__ = (
-        db.ForeignKeyConstraint(
-            ['contest_id', 'prob_id'],
-            [
-                'moodle.mdl_ejudge_problem.ejudge_contest_id',
-                'moodle.mdl_ejudge_problem.problem_id',
-            ],
-        ),
-        db.ForeignKeyConstraint(['user_id'], ['moodle.mdl_user.ej_id']),
-        {'schema': 'ejudge'},
-    )
+    __table_args__ = ({'schema': 'ejudge'},)
     __tablename__ = 'runs'
 
     run_id = db.Column(db.Integer, primary_key=True)
@@ -104,10 +90,6 @@ class EjudgeRun(db.Model):
     token_flags = db.Column(db.Integer)
     token_count = db.Column(db.Integer)
 
-    comments = db.relationship('Comment', backref=db.backref('comments'))
-    user = db.relationship(
-        'SimpleUser', backref=db.backref('simpleuser'), uselist=False
-    )
     problem = db.relationship(
         'EjudgeProblem',
         backref=db.backref('ejudge_runs', lazy='dynamic'),
@@ -152,9 +134,7 @@ class EjudgeRun(db.Model):
 
     @lazy
     def get_sources(self):
-        data = safe_open(
-            submit_path(sources_path, self.contest_id, self.run_id), 'rb'
-        ).read()
+        data = safe_open(submit_path(sources_path, self.contest_id, self.run_id), 'rb').read()
         for encoding in ['utf-8', 'ascii', 'windows-1251']:
             try:
                 data = data.decode(encoding)
@@ -168,32 +148,25 @@ class EjudgeRun(db.Model):
         return data
 
     def get_output_file(
-        self, test_num, tp="o", size=None
+            self, test_num, tp="o", size=None
     ):  # tp: o - output, e - stderr, c - checker
         data = (
-            self.get_output_archive()
-            .getfile("{0:06}.{1}".format(test_num, tp))
-            .decode('ascii')
-        )
+            self.get_output_archive().getfile("{0:06}.{1}".format(test_num, tp)).decode('ascii'))
         if size is not None:
             data = data[:size]
         return data
 
     def get_output_file_size(
-        self, test_num, tp="o"
+            self, test_num, tp="o"
     ):  # tp: o - output, e - stderr, c - checker
         data = (
-            self.get_output_archive()
-            .getfile("{0:06}.{1}".format(test_num, tp))
-            .decode('ascii')
-        )
+            self.get_output_archive().getfile("{0:06}.{1}".format(test_num, tp)).decode('ascii'))
         return len(data)
 
     def get_output_archive(self):
         if "output_archive" not in self.__dict__:
             self.output_archive = EjudgeArchiveReader(
-                submit_path(output_path, self.contest_id, self.run_id)
-            )
+                submit_path(output_path, self.contest_id, self.run_id))
         return self.output_archive
 
     def get_test_full_protocol(self, test_num):
@@ -212,7 +185,7 @@ class EjudgeRun(db.Model):
                 test_protocol['output'] = self.get_output_file(int(test_num), tp='o')
             else:
                 test_protocol['output'] = (
-                    self.get_output_file(int(test_num), tp='o', size=255) + '...\n'
+                        self.get_output_file(int(test_num), tp='o', size=255) + '...\n'
                 )
                 test_protocol['big_output'] = True
         except OSError as e:
@@ -225,7 +198,7 @@ class EjudgeRun(db.Model):
                 )
             else:
                 test_protocol['checker_output'] = (
-                    self.get_output_file(int(test_num), tp='c', size=255) + '...\n'
+                        self.get_output_file(int(test_num), tp='c', size=255) + '...\n'
                 )
         except OSError as e:
             test_protocol['checker_output'] = judge_info.get('checker', '')
@@ -237,7 +210,7 @@ class EjudgeRun(db.Model):
                 )
             else:
                 test_protocol['error_output'] = (
-                    self.get_output_file(int(test_num), tp='e', size=255) + '...\n'
+                        self.get_output_file(int(test_num), tp='e', size=255) + '...\n'
                 )
         except OSError as e:
             test_protocol['error_output'] = judge_info.get('stderr', '')

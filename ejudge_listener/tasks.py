@@ -1,4 +1,5 @@
 import sys
+from typing import Optional
 
 import requests
 from flask import current_app
@@ -6,7 +7,8 @@ from requests import RequestException
 from sqlalchemy.orm.exc import NoResultFound
 
 from ejudge_listener import create_app
-from ejudge_listener.models import db, EjudgeRun
+from ejudge_listener.models import db
+from ejudge_listener.models.ejudge_run import EjudgeRun
 from ejudge_listener.plugins import mongo, rq
 from ejudge_listener.protocol.protocol import get_full_protocol
 from ejudge_listener.protocol.run_statuses import TERMINAL_RUN_STATUSES
@@ -32,8 +34,8 @@ def send_json_to_front(contest_id: int, run_id: int, json: dict):
     except RequestException:
         log_msg = 'Ejudge-front bad response or timeout, task requeued'
         current_app.logger.exception(log_msg)
-        q = rq.get_queue()
         if json['status'] in TERMINAL_RUN_STATUSES:
+            q = rq.get_queue()
             q.enqueue(send_run, contest_id, run_id, json)
             return
     log_msg = f'Run with contest_id={contest_id}, run_id={run_id} sended successfully'
@@ -43,9 +45,9 @@ def send_json_to_front(contest_id: int, run_id: int, json: dict):
 def process_run(contest_id: int, run_id: int) -> dict:
     try:
         run = db.session.query(EjudgeRun) \
-              .filter_by(contest_id=contest_id) \
-              .filter_by(run_id=run_id) \
-              .one()
+            .filter_by(contest_id=contest_id) \
+            .filter_by(run_id=run_id) \
+            .one()
     except NoResultFound:
         # Critical error, log and exit. Usually we already have run in database.
         db.session.rollback()

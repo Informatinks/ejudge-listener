@@ -1,8 +1,7 @@
 import traceback
 from collections import OrderedDict
-from flask import jsonify
 
-from ejudge_listener.models import EjudgeRun
+from ejudge_listener.models.ejudge_run import EjudgeRun
 
 
 def get_full_protocol(run: EjudgeRun) -> dict:
@@ -14,7 +13,6 @@ def get_full_protocol(run: EjudgeRun) -> dict:
     for test_num in tests:
         tests[test_num] = run.get_test_full_protocol(test_num)
     full_protocol = {'tests': tests, 'audit': run.get_audit()}
-
     compiler_output = protocol.get('compiler_output')
     if compiler_output:
         full_protocol['compiler_output'] = protocol['compiler_output']
