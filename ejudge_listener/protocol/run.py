@@ -13,8 +13,7 @@ def read_file_unknown_encoding(file_name, size=255):
     try:
         f = codecs.open(file_name, 'r', encoding='utf-8')
         res = f.read(size)
-    except UnicodeDecodeError as err:
-        error_str = str(err)
+    except UnicodeDecodeError:
         f = codecs.open(file_name, 'r', encoding='koi8-r')
         res = f.read(size)
     return res

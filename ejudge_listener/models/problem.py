@@ -115,7 +115,6 @@ class EjudgeProblem(Problem):
         prob = conf.getProblem(self.problem_id)
 
         test_file_name = (prob.tests_dir + prob.test_pat) % int(test_num)
-        error_str = None
         if os.path.exists(test_file_name):
             res = read_file_unknown_encoding(test_file_name, size)
         else:
@@ -134,7 +133,6 @@ class EjudgeProblem(Problem):
         prob = conf.getProblem(self.problem_id)
 
         corr_file_name = (prob.tests_dir + prob.corr_pat) % int(test_num)
-        error_str = None
         if os.path.exists(corr_file_name):
             res = read_file_unknown_encoding(corr_file_name, size)
         else:
@@ -173,7 +171,6 @@ class EjudgeProblem(Problem):
         prob = conf.getProblem(self.problem_id)
 
         # generate dir with checker
-        checker_dir = None
         if conf.advanced_layout:
             checker_dir = os.path.join(conf.contest_path, "problems", prob.internal_name)
         else:

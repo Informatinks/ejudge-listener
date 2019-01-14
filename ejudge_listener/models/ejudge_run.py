@@ -320,15 +320,10 @@ class EjudgeRun(db.Model):
 
     @staticmethod
     def get_by(run_id, contest_id):
-        try:
-            return (
-                db.session.query(EjudgeRun)
-                .filter(EjudgeRun.run_id == int(run_id))
-                .filter(EjudgeRun.contest_id == int(contest_id))
-                .first()
-            )
-        except:
-            return None
+        return db.session.query(EjudgeRun) \
+            .filter(EjudgeRun.run_id == int(run_id)) \
+            .filter(EjudgeRun.contest_id == int(contest_id)) \
+            .first()
 
     @lazy
     def _get_compilation_protocol(self):

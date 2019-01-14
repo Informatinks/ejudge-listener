@@ -833,7 +833,8 @@ class RawConfigParser(MutableMapping):
             for key, value in vars.items():
                 d[self.optionxform(key)] = value
         value_getter = lambda option: self._interpolation.before_get(self,
-                                                                     section, idx, option, d[option], d)
+                                                                     section, idx, option,
+                                                                     d[option], d)
         if raw:
             value_getter = lambda option: d[option]
         return [(option, value_getter(option)) for option in d.keys()]
@@ -1048,7 +1049,8 @@ class RawConfigParser(MutableMapping):
                             raise DuplicateSectionError(sectname, fpname, lineno)
                         self._sections[sectname].append(self._dict());
                         cursect = self._sections[sectname][-1];
-                        self._proxies[sectname].append(SectionProxy(self, sectname, len(self._sections[sectname]) - 1))
+                        self._proxies[sectname].append(
+                            SectionProxy(self, sectname, len(self._sections[sectname]) - 1))
                         elements_added.add(sectname)
                     elif sectname == self.default_section:
                         cursect = self._defaults
