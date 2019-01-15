@@ -13,7 +13,7 @@ class TestCase(flask_testing.TestCase):
         app = create_app(is_test=True)
         return app
 
-    def init_db(self):
+    def create_runs(self):
         """
         contest_id | run_id
              1     |    10
@@ -53,19 +53,8 @@ class TestCase(flask_testing.TestCase):
 
     def setUp(self):
         db.drop_all()
-        print('')
         db.create_all()
-        self.create_problems()
-
-        self.init_db()
 
     def tearDown(self):
         db.session.remove()
-        # db.drop_all()
-
-    def test_meow(self):
-        print('Hi')
-
-
-if __name__ == '__main__':
-    unittest.main()
+        db.drop_all()
