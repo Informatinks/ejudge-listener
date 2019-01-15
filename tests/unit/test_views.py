@@ -1,12 +1,8 @@
 import random
 import unittest
 from unittest.mock import patch
-
 from flask import url_for
-from flask_testing import TestCase
-
-from ejudge_listener import create_app
-from config import TestConfig
+from tests.unit.base import TestCase
 
 MIN_ID = 1
 MAX_ID = 1_000_000
@@ -25,10 +21,6 @@ class ViewTest(TestCase):
     invalid_ids = ['', 'one', 'dog', True, False, None]  # All possible
     invalid_requests = [{'contest_id': i_id, 'run_id': i_id} for i_id in invalid_ids]
 
-    def create_app(self):
-        app = create_app(TestConfig)
-        return app
-
     def assert422(self, response, message=None):
         self.assertStatus(response, 422, message)
 
@@ -38,7 +30,7 @@ class ViewTest(TestCase):
     def send_6_invalid_requests(self):
         return [self.send_request(request) for request in self.invalid_requests]
 
-    # --------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
 
     def test_valid_request(self, mock_enqueue):
         self.assert200(self.send_request(self.valid_int_request))
