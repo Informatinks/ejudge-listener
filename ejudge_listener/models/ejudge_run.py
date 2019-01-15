@@ -42,7 +42,11 @@ def lazy(func):
 
 
 class EjudgeRun(db.Model):
-    __table_args__ = ({'schema': 'ejudge'},)
+    __table_args__ = (db.ForeignKeyConstraint(
+        ['contest_id', 'prob_id'],
+        ['moodle.mdl_ejudge_problem.ejudge_contest_id',
+         'moodle.mdl_ejudge_problem.problem_id']
+    ), {'schema': 'ejudge'})
     __tablename__ = 'runs'
 
     run_id = db.Column(db.Integer, primary_key=True)
@@ -134,7 +138,9 @@ class EjudgeRun(db.Model):
 
     @lazy
     def get_sources(self):
-        data = safe_open(submit_path(sources_path, self.contest_id, self.run_id), 'rb').read()
+        data = safe_open(
+            submit_path(sources_path, self.contest_id, self.run_id),
+            'rb').read()
         for encoding in ['utf-8', 'ascii', 'windows-1251']:
             try:
                 data = data.decode(encoding)
@@ -151,7 +157,8 @@ class EjudgeRun(db.Model):
             self, test_num, tp="o", size=None
     ):  # tp: o - output, e - stderr, c - checker
         data = (
-            self.get_output_archive().getfile("{0:06}.{1}".format(test_num, tp)).decode('ascii'))
+            self.get_output_archive().getfile(
+                "{0:06}.{1}".format(test_num, tp)).decode('ascii'))
         if size is not None:
             data = data[:size]
         return data
@@ -160,7 +167,8 @@ class EjudgeRun(db.Model):
             self, test_num, tp="o"
     ):  # tp: o - output, e - stderr, c - checker
         data = (
-            self.get_output_archive().getfile("{0:06}.{1}".format(test_num, tp)).decode('ascii'))
+            self.get_output_archive().getfile(
+                "{0:06}.{1}".format(test_num, tp)).decode('ascii'))
         return len(data)
 
     def get_output_archive(self):
@@ -182,10 +190,12 @@ class EjudgeRun(db.Model):
         test_protocol['big_output'] = False
         try:
             if self.get_output_file_size(int(test_num), tp='o') <= 255:
-                test_protocol['output'] = self.get_output_file(int(test_num), tp='o')
+                test_protocol['output'] = self.get_output_file(int(test_num),
+                                                               tp='o')
             else:
                 test_protocol['output'] = (
-                        self.get_output_file(int(test_num), tp='o', size=255) + '...\n'
+                        self.get_output_file(int(test_num), tp='o',
+                                             size=255) + '...\n'
                 )
                 test_protocol['big_output'] = True
         except OSError as e:
@@ -198,7 +208,8 @@ class EjudgeRun(db.Model):
                 )
             else:
                 test_protocol['checker_output'] = (
-                        self.get_output_file(int(test_num), tp='c', size=255) + '...\n'
+                        self.get_output_file(int(test_num), tp='c',
+                                             size=255) + '...\n'
                 )
         except OSError as e:
             test_protocol['checker_output'] = judge_info.get('checker', '')
@@ -210,7 +221,8 @@ class EjudgeRun(db.Model):
                 )
             else:
                 test_protocol['error_output'] = (
-                        self.get_output_file(int(test_num), tp='e', size=255) + '...\n'
+                        self.get_output_file(int(test_num), tp='e',
+                                             size=255) + '...\n'
                 )
         except OSError as e:
             test_protocol['error_output'] = judge_info.get('stderr', '')
@@ -218,14 +230,17 @@ class EjudgeRun(db.Model):
         if 'term-signal' in judge_info:
             test_protocol['extra'] = 'Signal %(signal)s. %(description)s' % {
                 'signal': judge_info['term-signal'],
-                'description': self.SIGNAL_DESCRIPTION[judge_info['term-signal']],
+                'description': self.SIGNAL_DESCRIPTION[
+                    judge_info['term-signal']],
             }
         if 'exit-code' in judge_info:
             test_protocol['extra'] = test_protocol.get(
                 'extra', ''
-            ) + '\n Exit code %(exit_code)s. ' % {'exit_code': judge_info['exit-code']}
+            ) + '\n Exit code %(exit_code)s. ' % {
+                                         'exit_code': judge_info['exit-code']}
 
-        for type_ in [('o', 'output'), ('c', 'checker_output'), ('e', 'error_output')]:
+        for type_ in [('o', 'output'), ('c', 'checker_output'),
+                      ('e', 'error_output')]:
             file_name = '{0:06d}.{1}'.format(int(test_num), type_[0])
             if self._out_arch is None:
                 try:
@@ -233,10 +248,12 @@ class EjudgeRun(db.Model):
                     self._out_arch_file_names = set(self._out_arch.namelist())
                 except:
                     pass
-            if file_name not in self._out_arch_file_names or type_[1] in test_protocol:
+            if file_name not in self._out_arch_file_names or type_[
+                1] in test_protocol:
                 continue
             with self._out_arch.open(file_name, 'r') as f:
-                test_protocol[type_[1]] = f.read(1024).decode("utf-8") + "...\n"
+                test_protocol[type_[1]] = f.read(1024).decode(
+                    "utf-8") + "...\n"
 
         return test_protocol
 
@@ -257,7 +274,8 @@ class EjudgeRun(db.Model):
             self.tests_count = int(rep.getAttribute('run-tests'))
             self.status_string = rep.getAttribute('status')
 
-            compiler_output_elements = self.xml.getElementsByTagName('compiler_output')
+            compiler_output_elements = self.xml.getElementsByTagName(
+                'compiler_output')
             if compiler_output_elements:
                 self.compiler_output = getattr(
                     compiler_output_elements[0].firstChild, 'nodeValue', ''
@@ -294,7 +312,8 @@ class EjudgeRun(db.Model):
                 }
                 judge_info = {}
 
-                for _type in ('input', 'output', 'correct', 'stderr', 'checker'):
+                for _type in (
+                        'input', 'output', 'correct', 'stderr', 'checker'):
                     lst = node.getElementsByTagName(_type)
                     if lst and lst[0].firstChild:
                         judge_info[_type] = lst[0].firstChild.nodeValue
@@ -302,9 +321,11 @@ class EjudgeRun(db.Model):
                         judge_info[_type] = ''
 
                 if node.hasAttribute('term-signal'):
-                    judge_info['term-signal'] = int(node.getAttribute('term-signal'))
+                    judge_info['term-signal'] = int(
+                        node.getAttribute('term-signal'))
                 if node.hasAttribute('exit-code'):
-                    judge_info['exit-code'] = int(node.getAttribute('exit-code'))
+                    judge_info['exit-code'] = int(
+                        node.getAttribute('exit-code'))
 
                 self.judge_tests_info[number] = judge_info
                 self.tests[number] = test
