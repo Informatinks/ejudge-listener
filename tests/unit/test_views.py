@@ -1,7 +1,7 @@
 import random
-import unittest
 from unittest.mock import patch
 from flask import url_for
+
 from tests.unit.base import TestCase
 
 MIN_ID = 1
@@ -43,7 +43,3 @@ class ViewTest(TestCase):
             with self.subTest():
                 self.assert422(response)
         self.assertEqual(mock_enqueue.call_count, 0)
-
-
-if __name__ == '__main__':
-    unittest.main()

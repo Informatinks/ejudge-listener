@@ -27,30 +27,6 @@ class TestCase(flask_testing.TestCase):
             db.session.add(run)
         db.session.commit()
 
-    def create_problems(self):
-        self.problems = [
-            EjudgeProblem.create(
-                ejudge_prid=1,
-                contest_id=1,
-                ejudge_contest_id=1,
-                problem_id=1,
-            ),
-            EjudgeProblem.create(
-                ejudge_prid=2,
-                contest_id=2,
-                ejudge_contest_id=1,
-                problem_id=2,
-            ),
-            EjudgeProblem.create(
-                ejudge_prid=3,
-                contest_id=3,
-                ejudge_contest_id=2,
-                problem_id=1,
-            )
-        ]
-        db.session.add_all(self.problems)
-        db.session.flush(self.problems)
-
     def setUp(self):
         db.drop_all()
         db.create_all()

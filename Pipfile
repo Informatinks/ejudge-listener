@@ -8,6 +8,7 @@ flask-testing = "*"
 fakeredis = "*"
 isort = "*"
 teamcity-messages = "*"
+coverage = "*"
 
 [packages]
 flask = "*"

@@ -1,5 +1,5 @@
--i https://pypi.org/simple
 click==7.0
+coverage==4.5.2
 fakeredis==0.16.0
 flask-testing==0.7.1
 flask==1.0.2
