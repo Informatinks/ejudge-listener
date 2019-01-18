@@ -41,6 +41,9 @@ ENV/
 env.bak/
 venv.bak/
 
+# deploy-settings
+settings/settings.cfg
+
 
 # IDEs
 .idea
