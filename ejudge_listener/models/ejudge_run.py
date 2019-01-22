@@ -9,12 +9,12 @@ from ejudge_listener.protocol.ejudge_archive import EjudgeArchiveReader
 from ejudge_listener.protocol.run import (
     safe_open,
     submit_path,
-    sources_path,
-    audit_path,
+    SOURCES_PATH,
+    AUDIT_PATH,
     to32,
-    output_path,
+    OUTPUT_PATH,
     get_string_status,
-    protocols_path,
+    PROTOCOLS_PATH,
     get_protocol_from_file,
 )
 
@@ -31,12 +31,10 @@ def lazy(func):
         name = "_" + func.__name__
         try:
             return getattr(self, name)
-        except AttributeError as e:
-            pass
-
-        value = func(self, *args)
-        setattr(self, name, value)
-        return value
+        except AttributeError:
+            value = func(self, *args)
+            setattr(self, name, value)
+            return value
 
     return cached
 
@@ -130,7 +128,7 @@ class EjudgeRun(db.Model):
     @lazy
     def get_audit(self):
         data = safe_open(
-            submit_path(audit_path, self.contest_id, self.run_id), 'r'
+            submit_path(AUDIT_PATH, self.contest_id, self.run_id), 'r'
         ).read()
         if type(data) == bytes:
             data = data.decode('ascii')
@@ -138,9 +136,7 @@ class EjudgeRun(db.Model):
 
     @lazy
     def get_sources(self):
-        data = safe_open(
-            submit_path(sources_path, self.contest_id, self.run_id),
-            'rb').read()
+        data = safe_open(submit_path(SOURCES_PATH, self.contest_id, self.run_id), 'rb').read()
         for encoding in ['utf-8', 'ascii', 'windows-1251']:
             try:
                 data = data.decode(encoding)
@@ -174,7 +170,7 @@ class EjudgeRun(db.Model):
     def get_output_archive(self):
         if "output_archive" not in self.__dict__:
             self.output_archive = EjudgeArchiveReader(
-                submit_path(output_path, self.contest_id, self.run_id))
+                submit_path(OUTPUT_PATH, self.contest_id, self.run_id))
         return self.output_archive
 
     def get_test_full_protocol(self, test_num):
@@ -248,8 +244,7 @@ class EjudgeRun(db.Model):
                     self._out_arch_file_names = set(self._out_arch.namelist())
                 except:
                     pass
-            if file_name not in self._out_arch_file_names or type_[
-                1] in test_protocol:
+            if file_name not in self._out_arch_file_names or type_[1] in test_protocol:
                 continue
             with self._out_arch.open(file_name, 'r') as f:
                 test_protocol[type_[1]] = f.read(1024).decode(
@@ -348,7 +343,7 @@ class EjudgeRun(db.Model):
 
     @lazy
     def _get_compilation_protocol(self):
-        filename = submit_path(protocols_path, self.contest_id, self.run_id)
+        filename = submit_path(PROTOCOLS_PATH, self.contest_id, self.run_id)
         if filename:
             if os.path.isfile(filename):
                 myopen = lambda x, y: open(x, y, encoding='utf-8')
@@ -381,8 +376,8 @@ class EjudgeRun(db.Model):
 
     @lazy
     def _get_protocol(self):
-        filename = submit_path(protocols_path, self.contest_id, self.run_id)
-        if filename != '':
+        filename = submit_path(PROTOCOLS_PATH, self.contest_id, self.run_id)
+        if filename:
             return get_protocol_from_file(filename)
         else:
             return '<a></a>'
