@@ -52,16 +52,11 @@ def process_run(run_id: int, contest_id: int) -> Optional[dict]:
         log_msg = f'Run with run_id={run_id} contest_id={contest_id}, doesn\'t exist'
         current_app.logger.exception(log_msg)
         sys.exit(0)
-    mongo_protocol_id = put_protocol_to_mongo(run)
+    protocol = get_full_protocol(run)
+    if not protocol:
+        return None
+    protocol_id = mongo.db.protocol.insert_one(protocol).inserted_id
+    mongo_protocol_id = str(protocol_id)
     run.mongo_protocol_id = mongo_protocol_id
     data = run_schema.dump(run).data
     return data
-
-
-def put_protocol_to_mongo(run: EjudgeRun) -> str:
-    """
-    :return: hex encoded version of ObjectId.
-    """
-    protocol = get_full_protocol(run)
-    protocol_id = mongo.db.protocol.insert_one(protocol).inserted_id
-    return str(protocol_id)
