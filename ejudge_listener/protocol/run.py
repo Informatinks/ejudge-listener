@@ -4,9 +4,9 @@ import codecs
 
 CONTEST_PATH = '/home/judges/contests_var'  # TODO: какой путь на самом деле?
 PROTOCOLS_PATH = 'archive/xmlreports'  # TODO: какой путь на самом деле?
-AUDIT_PATH = 'var/archive/audit'
-SOURCES_PATH = 'var/archive/runs'
-OUTPUT_PATH = 'var/archive/output'
+AUDIT_PATH = 'archive/audit'
+SOURCES_PATH = 'archive/runs'
+OUTPUT_PATH = 'archive/output'
 
 
 def read_file_unknown_encoding(file_name, size=255):
