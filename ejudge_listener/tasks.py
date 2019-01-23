@@ -55,8 +55,18 @@ def process_run(run_id: int, contest_id: int) -> Optional[dict]:
     protocol = get_full_protocol(run)
     if not protocol:
         return None
-    protocol_id = mongo.db.protocol.insert_one(protocol).inserted_id
-    mongo_protocol_id = str(protocol_id)
+    mongo_protocol_id = insert_protocol_to_mongo(protocol)
     run.mongo_protocol_id = mongo_protocol_id
     data = run_schema.dump(run).data
     return data
+
+
+def insert_protocol_to_mongo(protocol: dict) -> str:
+    """
+    Insert EjudgeRun protocol to mongo.
+    :param protocol: EjudgeRun protocol.
+    :return: hex encoded version of ObjectId.
+    """
+    protocol_id = mongo.db.protocol.insert_one(protocol).inserted_id
+    mongo_protocol_id = str(protocol_id)
+    return mongo_protocol_id
