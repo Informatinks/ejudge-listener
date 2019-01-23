@@ -29,7 +29,7 @@ def send_run(run_id: int, contest_id: int, json: dict = None) -> None:
 
 def send_json_to_front(run_id: int, contest_id: int, json: dict):
     try:
-        r = requests.post('ejudge-front', json=json, timeout=5)
+        r = requests.post(current_app.config['EJUDGE_FRONT_URL'], json=json, timeout=5)
         r.raise_for_status()
     except RequestException:
         log_msg = 'Ejudge-front bad response or timeout, task requeued'
