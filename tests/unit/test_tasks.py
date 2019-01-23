@@ -36,7 +36,7 @@ class Tasks(TestCase):
     def test_process_run_with_existent_run(self, mock_put_protocol_to_mongo):
         mock_put_protocol_to_mongo.return_value = MONGO_PROTOCOL_ID
 
-        self.assertEqual(process_run(1, 10), process_run_1_10_json)
+        self.assertEqual(process_run(10, 1), process_run_1_10_json)
 
         mock_put_protocol_to_mongo.assert_called()
 
@@ -45,7 +45,7 @@ class Tasks(TestCase):
         mock_put_protocol_to_mongo.return_value = MONGO_PROTOCOL_ID
 
         with self.assertRaises(SystemExit) as cm:
-            process_run(5555, 7777)
+            process_run(7777, 5555)
 
         print(cm.exception.code)
         self.assertEqual(cm.exception.code, 0)
@@ -60,7 +60,7 @@ class Tasks(TestCase):
             mock_app_logger
     ):
         run_json = process_run_1_10_json
-        send_json_to_front(1, 10, run_json)
+        send_json_to_front(10, 1, run_json)
         mock_app_logger.assert_called_once_with(LOG_MSG)
         mock_enqueue.assert_not_called()
 
@@ -78,7 +78,7 @@ class Tasks(TestCase):
 
         mock_response.return_value.raise_for_status = MagicMock(side_effect=HTTPError())
 
-        send_json_to_front(1, 10, run_json)
+        send_json_to_front(10, 1, run_json)
         mock_app_logger.assert_called_once_with(ERROR_LOG_MSG)
         mock_enqueue.assert_called_once_with(send_run, 1, 10, run_json)
 
@@ -96,6 +96,6 @@ class Tasks(TestCase):
 
         mock_response.return_value.raise_for_status = MagicMock(side_effect=HTTPError())
 
-        send_json_to_front(1, 10, run_json)
+        send_json_to_front(10, 1, run_json)
         mock_app_logger.assert_called_once_with(ERROR_LOG_MSG)
         mock_enqueue.assert_not_called()
