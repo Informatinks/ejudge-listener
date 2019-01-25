@@ -2,6 +2,7 @@ from unittest.mock import patch, MagicMock
 
 from requests import HTTPError
 
+from ejudge_listener.exceptions import ProtocolNotFoundError
 from ejudge_listener.tasks import process_run, send_json_to_front, send_to_ejudge_front
 from tests.unit.base import TestCase
 
@@ -35,6 +36,7 @@ class TestProcessRun(TestCase):
 
     # -------------------------------------------------------------------------
 
+    # noinspection PyUnresolvedReferences,PyTypeChecker
     def test_db_doesnt_contain_run(self):
         with self.assertRaises(SystemExit) as cm:
             process_run(7777, 5555)
@@ -55,7 +57,7 @@ class TestProcessRun(TestCase):
         mock_insert_protocol_to_mongo.assert_called()
 
     @patch('ejudge_listener.tasks.insert_protocol_to_mongo')
-    @patch('ejudge_listener.tasks.get_full_protocol')
+    @patch('ejudge_listener.tasks.get_full_protocol', side_effect=ProtocolNotFoundError)
     def test_db_contain_run_but_ejudge_doesnt_have_protocol(
             self,
             mock_get_full_protocol,
@@ -64,7 +66,8 @@ class TestProcessRun(TestCase):
         mock_get_full_protocol.return_value = None
         mock_insert_protocol_to_mongo.return_value = MONGO_PROTOCOL_ID
 
-        self.assertIsNone(process_run(10, 1))
+        with self.assertRaises(ProtocolNotFoundError):
+            process_run(10, 1)
         mock_insert_protocol_to_mongo.assert_not_called()
 
 
