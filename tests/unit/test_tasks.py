@@ -25,11 +25,13 @@ LOG_MSG = 'Run with run_id=10 contest_id=1 sended successfully'
 ERROR_LOG_MSG = 'Ejudge-front bad response or timeout, task requeued'
 
 
-class ProcessRun(TestCase):
+class TestProcessRun(TestCase):
     def setUp(self):
         super().setUp()
         self.create_runs()
         self.addCleanup(patch.stopall)
+
+    # -------------------------------------------------------------------------
 
     def test_db_doesnt_contain_run(self):
         with self.assertRaises(SystemExit) as cm:
@@ -66,11 +68,13 @@ class ProcessRun(TestCase):
 
 @patch('rq.queue.Queue.enqueue')
 @patch('requests.post')
-class SendJson(TestCase):
+class TestSendJson(TestCase):
     def setUp(self):
         super().setUp()
         self.create_runs()
         self.addCleanup(patch.stopall)
+
+    # -------------------------------------------------------------------------
 
     @patch('ejudge_listener.tasks.current_app.logger.info')
     def test_send_json_to_working_front(
