@@ -42,30 +42,24 @@ class TestProcessRun(TestCase):
             process_run(7777, 5555)
         self.assertEqual(cm.exception.code, 0)
 
-    @patch('ejudge_listener.tasks.insert_protocol_to_mongo')
-    @patch('ejudge_listener.tasks.get_full_protocol')
+    @patch('ejudge_listener.tasks.insert_protocol_to_mongo', return_value=MONGO_PROTOCOL_ID)
+    @patch('ejudge_listener.tasks.get_full_protocol', return_value={'protocol': 'nice_protocol'})
     def test_db_contain_run_and_ejudge_contain_protocol(
             self,
             mock_get_full_protocol,
             mock_insert_protocol_to_mongo,
 
     ):
-        mock_get_full_protocol.return_value = {'protocol': 'nice protocol'}
-        mock_insert_protocol_to_mongo.return_value = MONGO_PROTOCOL_ID
-
         self.assertEqual(process_run(10, 1), process_run_10_1_json)
         mock_insert_protocol_to_mongo.assert_called()
 
-    @patch('ejudge_listener.tasks.insert_protocol_to_mongo')
+    @patch('ejudge_listener.tasks.insert_protocol_to_mongo', return_value=MONGO_PROTOCOL_ID)
     @patch('ejudge_listener.tasks.get_full_protocol', side_effect=ProtocolNotFoundError)
     def test_db_contain_run_but_ejudge_doesnt_have_protocol(
             self,
             mock_get_full_protocol,
             mock_insert_protocol_to_mongo
     ):
-        mock_get_full_protocol.return_value = None
-        mock_insert_protocol_to_mongo.return_value = MONGO_PROTOCOL_ID
-
         with self.assertRaises(ProtocolNotFoundError):
             process_run(10, 1)
         mock_insert_protocol_to_mongo.assert_not_called()
