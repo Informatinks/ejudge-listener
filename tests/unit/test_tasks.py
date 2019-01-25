@@ -1,6 +1,8 @@
 from unittest.mock import patch, MagicMock
+
 from requests import HTTPError
-from ejudge_listener.tasks import process_run, send_json_to_front, send_run
+
+from ejudge_listener.tasks import process_run, send_json_to_front, send_to_ejudge_front
 from tests.unit.base import TestCase
 
 MONGO_PROTOCOL_ID = '507f1f77bcf86cd799439011'
@@ -102,7 +104,7 @@ class TestSendJson(TestCase):
 
         send_json_to_front(10, 1, run_json)
         mock_app_logger.assert_called_once_with(ERROR_LOG_MSG)
-        mock_enqueue.assert_called_once_with(send_run, 1, 10, run_json)
+        mock_enqueue.assert_called_once_with(send_to_ejudge_front, 1, 10, run_json)
 
     @patch('ejudge_listener.tasks.current_app.logger.exception')
     def test_send_json_to_not_working_front_with_not_terminal_status(

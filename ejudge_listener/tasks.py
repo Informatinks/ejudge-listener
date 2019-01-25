@@ -16,7 +16,7 @@ from ejudge_listener.schemas import EjudgeRunSchema
 run_schema = EjudgeRunSchema()
 
 
-def send_run(run_id: int, contest_id: int, json: dict = None) -> None:
+def send_to_ejudge_front(run_id: int, contest_id: int, json: dict = None) -> None:
     app = create_app()
     with app.app_context():
         if json:
@@ -41,7 +41,7 @@ def send_json_to_front(run_id: int, contest_id: int, json: dict):
         current_app.logger.exception(log_msg)
         if json['status'] in TERMINAL_RUN_STATUSES:
             q = rq.get_queue('ejudge_listener')
-            q.enqueue(send_run, contest_id, run_id, json)
+            q.enqueue(send_to_ejudge_front, contest_id, run_id, json)
         return
     log_msg = f'Run with run_id={run_id} contest_id={contest_id} sended successfully'
     current_app.logger.info(log_msg)
@@ -51,7 +51,7 @@ def process_run(run_id: int, contest_id: int) -> dict:
     run = db.session.query(EjudgeRun) \
         .filter_by(run_id=run_id, contest_id=contest_id) \
         .one_or_none()
-    if not run:
+    if run is None:
         # Critical error, log and exit. Usually we already have run in database.
         db.session.rollback()
         log_msg = f'Run with run_id={run_id} contest_id={contest_id}, doesn\'t exist'
