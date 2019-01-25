@@ -1,5 +1,6 @@
 from flask import Flask
 
+import cli
 from ejudge_listener.error_handler import register_error_handlers
 from ejudge_listener.models import db
 from ejudge_listener.plugins import rq, mongo
@@ -18,4 +19,5 @@ def create_app(is_test=False):
     rq.init_app(app)
     setup_routes(app)
     register_error_handlers(app)
+    app.cli.add_command(cli.test)
     return app
