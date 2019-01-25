@@ -1,6 +1,6 @@
-import os
-import gzip
 import codecs
+import gzip
+import os
 
 CONTEST_PATH = '/home/judges/contests_var'  # TODO: какой путь на самом деле?
 PROTOCOLS_PATH = 'archive/xmlreports'  # TODO: какой путь на самом деле?
@@ -183,6 +183,7 @@ def submit_path(tp, contest_id, submit_id):
     )
 
 
+# TODO: enum вместо пути и на значении будет соотвествующий ProtocolNotFoundError
 def safe_open(path, tp, encoding=None):
     """
     Function to open file with path is equal to parameter path. It tries to open as plain file,

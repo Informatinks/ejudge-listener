@@ -1,9 +1,10 @@
-import os
-import xml.dom.minidom
-import xml
 import gzip
+import os
+import xml
+import xml.dom.minidom
 import zipfile
 
+from ejudge_listener.exceptions import AuditNotFoundError
 from ejudge_listener.models import db
 from ejudge_listener.protocol.ejudge_archive import EjudgeArchiveReader
 from ejudge_listener.protocol.run import (
@@ -127,9 +128,10 @@ class EjudgeRun(db.Model):
 
     @lazy
     def get_audit(self):
-        data = safe_open(
-            submit_path(AUDIT_PATH, self.contest_id, self.run_id), 'r'
-        ).read()
+        try:
+            data = safe_open(submit_path(AUDIT_PATH, self.contest_id, self.run_id), 'r').read()
+        except FileNotFoundError:
+            raise AuditNotFoundError  # TODO: исправить этот костыль, он относится к run.py:188
         if type(data) == bytes:
             data = data.decode('ascii')
         return data

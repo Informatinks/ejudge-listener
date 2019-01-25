@@ -1,11 +1,11 @@
 import sys
-from typing import Optional
 
 import requests
 from flask import current_app
 from requests import RequestException
 
 from ejudge_listener import create_app
+from ejudge_listener.exceptions import ProtocolNotFoundError
 from ejudge_listener.models import db
 from ejudge_listener.models.ejudge_run import EjudgeRun
 from ejudge_listener.plugins import mongo, rq
@@ -22,10 +22,14 @@ def send_run(run_id: int, contest_id: int, json: dict = None) -> None:
         if json:
             send_json_to_front(run_id, contest_id, json)
         else:
-            data = process_run(run_id, contest_id)
-            if data:
+            try:
+                data = process_run(run_id, contest_id)
+            except ProtocolNotFoundError:
+                msg = f'Protocol for run_id={run_id} contest_id={contest_id} not found'
+                current_app.logger.exception(msg)
+            else:
                 send_json_to_front(run_id, contest_id, data)
-            db.session.rollback()
+        db.session.rollback()
 
 
 def send_json_to_front(run_id: int, contest_id: int, json: dict):
@@ -43,7 +47,7 @@ def send_json_to_front(run_id: int, contest_id: int, json: dict):
     current_app.logger.info(log_msg)
 
 
-def process_run(run_id: int, contest_id: int) -> Optional[dict]:
+def process_run(run_id: int, contest_id: int) -> dict:
     run = db.session.query(EjudgeRun) \
         .filter_by(run_id=run_id, contest_id=contest_id) \
         .one_or_none()
@@ -54,8 +58,6 @@ def process_run(run_id: int, contest_id: int) -> Optional[dict]:
         current_app.logger.exception(log_msg)
         sys.exit(0)
     protocol = get_full_protocol(run)
-    if not protocol:
-        return None
     mongo_protocol_id = insert_protocol_to_mongo(protocol)
     run.mongo_protocol_id = mongo_protocol_id
     data = run_schema.dump(run).data
