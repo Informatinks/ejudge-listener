@@ -1,3 +1,5 @@
-from flask_sqlalchemy import SQLAlchemy
+from .base import db
+from .ejudge_run import EjudgeRun
+from .problem import EjudgeProblem
 
-db = SQLAlchemy()
+__all__ = ['db', 'EjudgeRun', 'EjudgeProblem']

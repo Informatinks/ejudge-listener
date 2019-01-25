@@ -1,11 +1,7 @@
-import unittest
-
 import flask_testing
-
 from ejudge_listener import create_app
 from ejudge_listener.models import db
 from ejudge_listener.models.ejudge_run import EjudgeRun
-from ejudge_listener.models.problem import EjudgeProblem
 
 
 class TestCase(flask_testing.TestCase):
@@ -15,12 +11,12 @@ class TestCase(flask_testing.TestCase):
 
     def create_runs(self):
         """
-        contest_id | run_id
-             1     |    10
-             2     |    20
-             3     |    30
-             4     |    40
-             5     |    50
+        run_id | contest_id
+          10   |     1
+          20   |     2
+          30   |     3
+          40   |     4
+          50   |     5
         """
         for i in range(1, 6):
             run = EjudgeRun(contest_id=i, run_id=i * 10)

@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "a940cc384de50c3414309666e5563d4d580c72108418b1fabd501c94789011bf"
+            "sha256": "faf546b23273369052954f366c48468c37b9d140fb29978d14f0b4f6cb7429c3"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -302,14 +302,6 @@
             "index": "pypi",
             "version": "==4.5.2"
         },
-        "fakeredis": {
-            "hashes": [
-                "sha256:0b03dfdced20169f945bde3cfd505ad5f7b8cf18ad0a124548563cbc587878da",
-                "sha256:ba8a820203ba5a7a7ef62e3619318d513b87f60328c5583634df398ae4b7af00"
-            ],
-            "index": "pypi",
-            "version": "==0.16.0"
-        },
         "flask": {
             "hashes": [
                 "sha256:2271c0070dbcb5275fad4a82e29f23ab92682dc45f9dfbc22c02ba9b9322ce48",
@@ -380,13 +372,6 @@
                 "sha256:fb7c206e01ad85ce57feeaaa0bf784b97fa3cad0d4a5737bc5295785f5c613a1"
             ],
             "version": "==1.1.0"
-        },
-        "redis": {
-            "hashes": [
-                "sha256:2100750629beff143b6a200a2ea8e719fcf26420adabb81402895e144c5083cf",
-                "sha256:8e0bdd2de02e829b6225b25646f9fb9daffea99a252610d040409a6738541f0a"
-            ],
-            "version": "==3.0.1"
         },
         "teamcity-messages": {
             "hashes": [

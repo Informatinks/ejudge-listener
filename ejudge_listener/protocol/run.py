@@ -1,12 +1,12 @@
-import os
-import gzip
 import codecs
+import gzip
+import os
 
-contest_path = '/home/judges/'
-protocols_path = 'var/archive/xmlreports'
-audit_path = 'var/archive/audit'
-sources_path = 'var/archive/runs'
-output_path = 'var/archive/output'
+CONTEST_PATH = '/home/judges/contests_var'  # TODO: какой путь на самом деле?
+PROTOCOLS_PATH = 'archive/xmlreports'  # TODO: какой путь на самом деле?
+AUDIT_PATH = 'archive/audit'
+SOURCES_PATH = 'archive/runs'
+OUTPUT_PATH = 'archive/output'
 
 
 def read_file_unknown_encoding(file_name, size=255):
@@ -171,9 +171,9 @@ def get_status_by_id(status_id):
 
 def submit_path(tp, contest_id, submit_id):
     # path to archive file with path to archive directory = tp,
-    # look up audit_path etc constants
+    # look up AUDIT_PATH etc constants
     return os.path.join(
-        contest_path,
+        CONTEST_PATH,
         '0' * (6 - len(str(contest_id))) + str(contest_id),
         tp,
         to32(submit_id // 32 // 32 // 32 % 32),
@@ -183,6 +183,7 @@ def submit_path(tp, contest_id, submit_id):
     )
 
 
+# TODO: enum вместо пути и на значении будет соотвествующий ProtocolNotFoundError
 def safe_open(path, tp, encoding=None):
     """
     Function to open file with path is equal to parameter path. It tries to open as plain file,

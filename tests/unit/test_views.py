@@ -13,7 +13,7 @@ def random_id():
 
 
 @patch('rq.queue.Queue.enqueue')
-class ViewTest(TestCase):
+class TestView(TestCase):
     valid_int_request = {'contest_id': random_id(), 'run_id': random_id()}
 
     valid_str_request = {'contest_id': str(random_id()), 'run_id': str(random_id())}
@@ -42,4 +42,4 @@ class ViewTest(TestCase):
         for response in responses:
             with self.subTest():
                 self.assert422(response)
-        self.assertEqual(mock_enqueue.call_count, 0)
+        mock_enqueue.assert_not_called()

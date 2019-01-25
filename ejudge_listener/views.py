@@ -13,5 +13,5 @@ update_run_args = {
 
 @use_args(update_run_args)
 def update_run(args):
-    rq.get_queue('ejudge_listener').enqueue('ejudge_listener.tasks.send_run', **args)
+    rq.get_queue('ejudge_listener').enqueue('ejudge_listener.tasks.send_to_ejudge_front', **args)
     return jsonify({})

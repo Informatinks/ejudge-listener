@@ -1,10 +1,11 @@
 import traceback
 from collections import OrderedDict
+from typing import Optional
 
 from ejudge_listener.models.ejudge_run import EjudgeRun
 
 
-def get_full_protocol(run: EjudgeRun) -> dict:
+def get_full_protocol(run: EjudgeRun) -> Optional[dict]:
     protocol = get_protocol(run)
     if protocol.get('result') == 'error':
         return protocol
@@ -12,7 +13,11 @@ def get_full_protocol(run: EjudgeRun) -> dict:
     tests = protocol.get('tests', {})
     for test_num in tests:
         tests[test_num] = run.get_test_full_protocol(test_num)
-    full_protocol = {'tests': tests, 'audit': run.get_audit()}
+    try:
+        audit = run.get_audit()
+    except FileNotFoundError:
+        return None
+    full_protocol = {'tests': tests, 'audit': audit}
     compiler_output = protocol.get('compiler_output')
     if compiler_output:
         full_protocol['compiler_output'] = protocol['compiler_output']

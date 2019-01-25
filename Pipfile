@@ -5,7 +5,6 @@ verify_ssl = true
 
 [dev-packages]
 flask-testing = "*"
-fakeredis = "*"
 isort = "*"
 teamcity-messages = "*"
 coverage = "*"

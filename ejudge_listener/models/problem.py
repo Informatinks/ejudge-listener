@@ -6,7 +6,7 @@ from ejudge_listener.rmatics.ejudge.serve_internal import EjudgeContestCfg
 from ejudge_listener.models import db
 from ejudge_listener.rmatics.utils.decorators import deprecated
 from ejudge_listener.rmatics.utils.json_type import JsonType
-from ejudge_listener.rmatics.utils.run import read_file_unknown_encoding
+from ejudge_listener.protocol.run import read_file_unknown_encoding
 
 
 class Problem(db.Model):
@@ -64,7 +64,8 @@ class EjudgeProblem(Problem):
     contest_id = db.Column(db.Integer, primary_key=True, nullable=False, autoincrement=False)
     ejudge_contest_id = db.Column(db.Integer, primary_key=True, nullable=False, autoincrement=False)
     secondary_ejudge_contest_id = db.Column(db.Integer, nullable=True)
-    problem_id = db.Column(db.Integer, primary_key=True, nullable=False, autoincrement=False)  # id in contest
+    problem_id = db.Column(db.Integer, primary_key=True, nullable=False,
+                           autoincrement=False)  # id in contest
     short_id = db.Column(db.Unicode(50))
     ejudge_name = db.Column('name', db.Unicode(255))
 
