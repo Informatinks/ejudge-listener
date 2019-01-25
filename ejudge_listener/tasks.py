@@ -25,6 +25,7 @@ def send_run(run_id: int, contest_id: int, json: dict = None) -> None:
             data = process_run(run_id, contest_id)
             if data:
                 send_json_to_front(run_id, contest_id, data)
+            db.session.rollback()
 
 
 def send_json_to_front(run_id: int, contest_id: int, json: dict):
@@ -37,7 +38,7 @@ def send_json_to_front(run_id: int, contest_id: int, json: dict):
         if json['status'] in TERMINAL_RUN_STATUSES:
             q = rq.get_queue('ejudge_listener')
             q.enqueue(send_run, contest_id, run_id, json)
-            return
+        return
     log_msg = f'Run with run_id={run_id} contest_id={contest_id} sended successfully'
     current_app.logger.info(log_msg)
 
