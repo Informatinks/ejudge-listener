@@ -7,14 +7,9 @@ from ejudge_listener.models import db
 from ejudge_listener.routes import setup_routes
 
 
-def create_app(is_test=False):
+def create_app():
     app = Flask(__name__)
-    app.config.from_pyfile('../configs/default.cfg', silent=True)
-    if is_test:
-        app.config.from_pyfile('../configs/testing.cfg', silent=True)
-    else:
-        app.config.from_pyfile('../configs/production.cfg', silent=True)
-
+    app.config.from_pyfile('../configs/production.cfg', silent=True)
     db.init_app(app)
     mongo.init_app(app)
     rq.init_app(app)

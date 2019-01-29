@@ -18,6 +18,9 @@ services:
     build:
       context: ..
 
+    volumes:
+      - ../configs/testing.cfg:/code/configs/production.cfg
+
     depends_on:
       - mariadb
 
