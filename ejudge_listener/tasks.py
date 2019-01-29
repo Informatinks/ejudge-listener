@@ -4,11 +4,10 @@ import requests
 from flask import current_app
 from requests import RequestException
 
-from ejudge_listener import create_app
 from ejudge_listener.exceptions import ProtocolNotFoundError
+from ejudge_listener.extensions import mongo, rq
 from ejudge_listener.models import db
 from ejudge_listener.models.ejudge_run import EjudgeRun
-from ejudge_listener.plugins import mongo, rq
 from ejudge_listener.protocol.protocol import get_full_protocol
 from ejudge_listener.protocol.run_statuses import TERMINAL_RUN_STATUSES
 from ejudge_listener.schemas import EjudgeRunSchema

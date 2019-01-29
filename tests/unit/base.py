@@ -1,4 +1,5 @@
 import flask_testing
+
 from ejudge_listener import create_app
 from ejudge_listener.models import db
 from ejudge_listener.models.ejudge_run import EjudgeRun
@@ -6,7 +7,7 @@ from ejudge_listener.models.ejudge_run import EjudgeRun
 
 class TestCase(flask_testing.TestCase):
     def create_app(self):
-        app = create_app(is_test=True)
+        app = create_app()
         return app
 
     def create_runs(self):

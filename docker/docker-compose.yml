@@ -1,0 +1,27 @@
+version: '3.0'
+
+services:
+
+  mariadb:
+    image: mariadb:5.5
+
+    environment:
+      # - MYSQL_DATABASE=informatics
+      - MYSQL_ROOT_PASSWORD=123456
+      - MYSQL_USER=testuser
+      - MYSQL_PASSWORD=123456
+
+    volumes:
+      - ./create-databases.sql:/docker-entrypoint-initdb.d/setup.sql
+
+  listener:
+    build:
+      context: ..
+
+    volumes:
+      - ../configs/testing.cfg:/code/configs/production.cfg
+
+    depends_on:
+      - mariadb
+
+    command: 'sh -c "sleep 10 && flask test --teamcity"'

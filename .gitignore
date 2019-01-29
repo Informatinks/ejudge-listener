@@ -42,7 +42,7 @@ env.bak/
 venv.bak/
 
 # deploy-settings
-settings/settings.cfg
+configs/production.cfg
 
 
 # IDEs
