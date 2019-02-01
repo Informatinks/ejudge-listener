@@ -1,14 +1,12 @@
 import logging
 import math
 
-from pymongo import MongoClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-
+from ejudge_listener import create_app
 from ejudge_listener.exceptions import ProtocolNotFoundError
+from ejudge_listener.extensions import mongo
 from ejudge_listener.models import EjudgeRun
+from ejudge_listener.models.base import db
 from ejudge_listener.protocol.protocol import get_full_protocol
-from scripts.config import DATABASE_URL, MONGO_URL
 
 # Init logger
 logger = logging.getLogger('protocol-migration')
@@ -18,15 +16,11 @@ log_fmt = '%(asctime)s - %(message)s'
 file_format = logging.Formatter(log_fmt)
 file_handler.setFormatter(file_format)
 
-# MySQL
-engine = create_engine(DATABASE_URL)
-Session = sessionmaker(bind=engine)
-session = Session()
+# Init app
+app = create_app()
+app.app_context().push()
 
-# Mongo
-mongo = MongoClient(MONGO_URL)
-
-LIMIT_ROWS = 1000
+LIMIT_ROWS = 1_000
 
 
 def process_protocol(run: EjudgeRun):
@@ -40,9 +34,10 @@ def process_protocol(run: EjudgeRun):
 
 
 def migrate():
-    total_chunks = math.ceil(session.query(EjudgeRun).count() / LIMIT_ROWS)
+    count = db.session.query(EjudgeRun).count()
+    total_chunks = math.ceil((count - 1) / LIMIT_ROWS)  # - first_run
 
-    first_run = session.query(EjudgeRun) \
+    first_run = db.session.query(EjudgeRun) \
         .order_by(EjudgeRun.contest_id, EjudgeRun.run_id) \
         .first()
     last_contest_id = first_run.contest_id
@@ -51,7 +46,7 @@ def migrate():
     process_protocol(first_run)
 
     for _ in range(total_chunks):
-        runs = session.query(EjudgeRun) \
+        runs = db.session.query(EjudgeRun) \
             .filter(EjudgeRun.contest_id >= last_contest_id,
                     EjudgeRun.run_id > last_run_id) \
             .order_by(EjudgeRun.contest_id, EjudgeRun.run_id) \
