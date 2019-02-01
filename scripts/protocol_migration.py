@@ -8,7 +8,6 @@ from sqlalchemy.orm import sessionmaker
 from ejudge_listener.exceptions import ProtocolNotFoundError
 from ejudge_listener.models import EjudgeRun
 from ejudge_listener.protocol.protocol import get_full_protocol
-from ejudge_listener.tasks import insert_protocol_to_mongo
 from scripts.config import DATABASE_URL, MONGO_URL
 
 # Init logger
@@ -36,7 +35,7 @@ def process_protocol(run: EjudgeRun):
     except ProtocolNotFoundError:
         logger.error(f'Protocol({run.contest_id}, {run.run_id}) -')
     else:
-        insert_protocol_to_mongo(protocol)
+        mongo.db.protocol.insert_one(protocol)
         logger.info(f'Protocol({run.contest_id}, {run.run_id}) +')
 
 
@@ -57,6 +56,8 @@ def migrate():
                     EjudgeRun.run_id > last_run_id) \
             .order_by(EjudgeRun.contest_id, EjudgeRun.run_id) \
             .limit(LIMIT_ROWS)
+        for run in runs:
+            process_protocol(runs)
         last_contest_id = runs[-1].contest_id
         last_run_id = runs[-1].run_id
 
