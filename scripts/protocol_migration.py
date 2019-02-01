@@ -51,6 +51,9 @@ def migrate():
         .first()
     last_id = first_run.id
 
+    ejudge_run = get_ejudge_run(first_run)
+    process_protocol(ejudge_run)
+
     for _ in range(total_chunks):
         runs = db.session.query(Run) \
             .filter(Run.id > last_id) \
