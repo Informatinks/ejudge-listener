@@ -6,6 +6,7 @@ from ejudge_listener.exceptions import ProtocolNotFoundError
 from ejudge_listener.extensions import mongo
 from ejudge_listener.models import EjudgeRun
 from ejudge_listener.models.base import db
+from ejudge_listener.models.run import Run
 from ejudge_listener.protocol.protocol import get_full_protocol
 
 # Init logger
@@ -23,6 +24,14 @@ app.app_context().push()
 LIMIT_ROWS = 1_000
 
 
+def get_ejudge_run(run: Run) -> EjudgeRun:
+    ejudge_run = db.session.query(EjudgeRun) \
+        .filter(EjudgeRun.contest_id == run.ejudge_contest_id) \
+        .filter(EjudgeRun.run_id == run.ejudge_run_id) \
+        .one_or_none()
+    return ejudge_run
+
+
 def process_protocol(run: EjudgeRun):
     try:
         protocol = get_full_protocol(run)
@@ -34,27 +43,28 @@ def process_protocol(run: EjudgeRun):
 
 
 def migrate():
-    count = db.session.query(EjudgeRun).count()
+    count = db.session.query(Run).count()
     total_chunks = math.ceil((count - 1) / LIMIT_ROWS)  # - first_run
 
-    first_run = db.session.query(EjudgeRun) \
-        .order_by(EjudgeRun.contest_id, EjudgeRun.run_id) \
+    first_run = db.session.query(Run) \
+        .order_by(id) \
         .first()
-    last_contest_id = first_run.contest_id
-    last_run_id = first_run.run_id
-
-    process_protocol(first_run)
+    last_id = first_run.id
 
     for _ in range(total_chunks):
-        runs = db.session.query(EjudgeRun) \
-            .filter(EjudgeRun.contest_id >= last_contest_id,
-                    EjudgeRun.run_id > last_run_id) \
-            .order_by(EjudgeRun.contest_id, EjudgeRun.run_id) \
+        runs = db.session.query(Run) \
+            .filter(Run.id > last_id) \
+            .order_by(Run.id) \
             .limit(LIMIT_ROWS)
         for run in runs:
-            process_protocol(run)
-        last_contest_id = runs[-1].contest_id
-        last_run_id = runs[-1].run_id
+            ejudge_run = get_ejudge_run(run)
+            if ejudge_run is not None:
+                process_protocol(ejudge_run)
+            else:
+                msg = f'EjudgeRun({run.contest_id}, {run.run_id}) not found'
+                logger.error(msg)
+
+        last_id = runs[-1].id
 
 
 if __name__ == '__main__':
