@@ -1,0 +1,65 @@
+import logging
+
+from pymongo import MongoClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+from ejudge_listener.exceptions import ProtocolNotFoundError
+from ejudge_listener.models import EjudgeRun
+from ejudge_listener.protocol.protocol import get_full_protocol
+from ejudge_listener.tasks import insert_protocol_to_mongo
+from scripts.config import DATABASE_URL, MONGO_URL
+
+# Init logger
+logger = logging.getLogger('protocol-migration')
+file_handler = logging.FileHandler('protocol-migration.log')
+file_handler.setLevel(logging.DEBUG)
+log_fmt = '%(asctime)s - %(message)s'
+file_format = logging.Formatter(log_fmt)
+file_handler.setFormatter(file_format)
+
+# MySQL
+engine = create_engine(DATABASE_URL)
+Session = sessionmaker(bind=engine)
+session = Session()
+
+# Mongo
+mongo = MongoClient(MONGO_URL)
+
+LIMIT_ROWS = 1000
+
+
+def process_protocol(run: EjudgeRun):
+    try:
+        protocol = get_full_protocol(run)
+    except ProtocolNotFoundError:
+        logger.error(f'Protocol({run.contest_id}, {run.run_id}) -')
+    else:
+        insert_protocol_to_mongo(protocol)
+        logger.info(f'Protocol({run.contest_id}, {run.run_id}) +')
+
+
+def migrate():
+    first_run = session.query(EjudgeRun) \
+        .order_by(EjudgeRun.contest_id, EjudgeRun.run_id) \
+        .first()
+    last_contest_id = first_run.contest_id
+    last_run_id = first_run.run_id
+
+    process_protocol(first_run)
+
+    while True:
+        runs = session.query(EjudgeRun) \
+            .filter(EjudgeRun.contest_id >= last_contest_id,
+                    EjudgeRun.run_id > last_run_id) \
+            .order_by(EjudgeRun.contest_id, EjudgeRun.run_id) \
+            .limit(LIMIT_ROWS)
+
+        if not runs:
+            break
+        for run in runs:
+            process_protocol(run)
+
+
+if __name__ == '__main__':
+    migrate()
