@@ -13,10 +13,9 @@ def get_full_protocol(run: EjudgeRun) -> Optional[dict]:
     tests = protocol.get('tests', {})
     for test_num in tests:
         tests[test_num] = run.get_test_full_protocol(test_num)
-    try:
-        audit = run.get_audit()
-    except FileNotFoundError:
-        return None
+
+    audit = run.get_audit()
+
     full_protocol = {'tests': tests, 'audit': audit}
     compiler_output = protocol.get('compiler_output')
     if compiler_output:
