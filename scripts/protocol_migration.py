@@ -57,7 +57,7 @@ def migrate():
             .order_by(EjudgeRun.contest_id, EjudgeRun.run_id) \
             .limit(LIMIT_ROWS)
         for run in runs:
-            process_protocol(runs)
+            process_protocol(run)
         last_contest_id = runs[-1].contest_id
         last_run_id = runs[-1].run_id
 
