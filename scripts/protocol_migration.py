@@ -2,15 +2,26 @@ import logging
 import math
 from typing import Optional
 
-from sqlalchemy import func
+from sqlalchemy import func, Column, Integer
 
 from ejudge_listener import create_app
 from ejudge_listener.exceptions import ProtocolNotFoundError
 from ejudge_listener.extensions import mongo
 from ejudge_listener.models import EjudgeRun
 from ejudge_listener.models.base import db
-from ejudge_listener.models.run import Run
 from ejudge_listener.protocol.protocol import get_full_protocol
+
+
+class Run(db.Model):
+    __table_args__ = (
+        {'schema': 'pynformatics'},
+    )
+    __tablename__ = 'runs'
+
+    id = Column(Integer, primary_key=True)
+    ejudge_run_id = Column('ej_run_id', Integer)
+    ejudge_contest_id = Column('ej_contest_id', Integer)
+
 
 # Init logger
 logger = logging.getLogger('protocol-migration')
