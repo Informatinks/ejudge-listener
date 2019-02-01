@@ -1,5 +1,8 @@
 import logging
 import math
+from typing import Optional
+
+from sqlalchemy import func
 
 from ejudge_listener import create_app
 from ejudge_listener.exceptions import ProtocolNotFoundError
@@ -24,7 +27,7 @@ app.app_context().push()
 LIMIT_ROWS = 1_000
 
 
-def get_ejudge_run(run: Run) -> EjudgeRun:
+def get_ejudge_run(run: Run) -> Optional[EjudgeRun]:
     ejudge_run = db.session.query(EjudgeRun) \
         .filter(EjudgeRun.contest_id == run.ejudge_contest_id) \
         .filter(EjudgeRun.run_id == run.ejudge_run_id) \
@@ -44,15 +47,8 @@ def process_protocol(run: EjudgeRun):
 
 def migrate():
     count = db.session.query(Run).count()
-    total_chunks = math.ceil((count - 1) / LIMIT_ROWS)  # - first_run
-
-    first_run = db.session.query(Run) \
-        .order_by(id) \
-        .first()
-    last_id = first_run.id
-
-    ejudge_run = get_ejudge_run(first_run)
-    process_protocol(ejudge_run)
+    total_chunks = math.ceil(count / LIMIT_ROWS)
+    last_id = db.session.query(func.min(Run.id)).scalar().scalar() - 1
 
     for _ in range(total_chunks):
         runs = db.session.query(Run) \
