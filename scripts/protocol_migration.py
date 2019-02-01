@@ -1,4 +1,5 @@
 import logging
+import math
 
 from pymongo import MongoClient
 from sqlalchemy import create_engine
@@ -40,6 +41,8 @@ def process_protocol(run: EjudgeRun):
 
 
 def migrate():
+    total_chunks = math.ceil(session.query(EjudgeRun).count() / LIMIT_ROWS)
+
     first_run = session.query(EjudgeRun) \
         .order_by(EjudgeRun.contest_id, EjudgeRun.run_id) \
         .first()
@@ -48,17 +51,14 @@ def migrate():
 
     process_protocol(first_run)
 
-    while True:
+    for _ in range(total_chunks):
         runs = session.query(EjudgeRun) \
             .filter(EjudgeRun.contest_id >= last_contest_id,
                     EjudgeRun.run_id > last_run_id) \
             .order_by(EjudgeRun.contest_id, EjudgeRun.run_id) \
             .limit(LIMIT_ROWS)
-
-        if not runs:
-            break
-        for run in runs:
-            process_protocol(run)
+        last_contest_id = runs[-1].contest_id
+        last_run_id = runs[-1].run_id
 
 
 if __name__ == '__main__':
