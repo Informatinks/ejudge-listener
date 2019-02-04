@@ -2,20 +2,21 @@ import logging
 import math
 from typing import Optional
 
-from sqlalchemy import func, Column, Integer
+from sqlalchemy import Column, Integer, func
 
 from ejudge_listener import create_app
-from ejudge_listener.exceptions import ProtocolNotFoundError
+from ejudge_listener.exceptions import (
+    AuditNotFoundError,
+    ProtocolNotFoundError
+)
 from ejudge_listener.extensions import mongo
 from ejudge_listener.models import EjudgeRun
 from ejudge_listener.models.base import db
-from ejudge_listener.protocol.protocol import get_full_protocol
+from ejudge_listener.protocol.protocol import read_protocol
 
 
 class Run(db.Model):
-    __table_args__ = (
-        {'schema': 'pynformatics'},
-    )
+    __table_args__ = ({'schema': 'pynformatics'},)
     __tablename__ = 'runs'
 
     id = Column(Integer, primary_key=True)
@@ -48,9 +49,11 @@ def get_ejudge_run(run: Run) -> Optional[EjudgeRun]:
 
 def process_protocol(run: EjudgeRun):
     try:
-        protocol = get_full_protocol(run)
+        protocol = read_protocol(run)
+    except AuditNotFoundError:
+        logger.error(f'Protocol({run.contest_id}, {run.run_id}) audit -')
     except ProtocolNotFoundError:
-        logger.error(f'Protocol({run.contest_id}, {run.run_id}) -')
+        logger.error(f'Protocol({run.contest_id}, {run.run_id}) proto -')
     else:
         mongo.db.protocol.insert_one(protocol)
         logger.info(f'Protocol({run.contest_id}, {run.run_id}) +')
@@ -59,7 +62,7 @@ def process_protocol(run: EjudgeRun):
 def migrate():
     count = db.session.query(Run).count()
     total_chunks = math.ceil(count / LIMIT_ROWS)
-    last_id = db.session.query(func.min(Run.id)).scalar().scalar() - 1
+    last_id = db.session.query(func.min(Run.id)).scalar() - 1
 
     for _ in range(total_chunks):
         runs = db.session.query(Run) \

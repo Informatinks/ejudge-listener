@@ -8,7 +8,7 @@ from ejudge_listener.exceptions import ProtocolNotFoundError
 from ejudge_listener.extensions import mongo, rq
 from ejudge_listener.models import db
 from ejudge_listener.models.ejudge_run import EjudgeRun
-from ejudge_listener.protocol.protocol import get_full_protocol
+from ejudge_listener.protocol.protocol import read_protocol
 from ejudge_listener.protocol.run_statuses import TERMINAL_RUN_STATUSES
 from ejudge_listener.schemas import EjudgeRunSchema
 
@@ -56,7 +56,7 @@ def process_run(run_id: int, contest_id: int) -> dict:
         log_msg = f'Run with run_id={run_id} contest_id={contest_id}, doesn\'t exist'
         current_app.logger.exception(log_msg)
         sys.exit(0)
-    protocol = get_full_protocol(run)
+    protocol = read_protocol(run)
     mongo_protocol_id = insert_protocol_to_mongo(protocol)
     run.mongo_protocol_id = mongo_protocol_id
     data = run_schema.dump(run).data

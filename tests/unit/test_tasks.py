@@ -1,9 +1,13 @@
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 from requests import HTTPError
 
 from ejudge_listener.exceptions import ProtocolNotFoundError
-from ejudge_listener.tasks import process_run, send_json_to_front, send_to_ejudge_front
+from ejudge_listener.tasks import (
+    process_run,
+    send_json_to_front,
+    send_to_ejudge_front
+)
 from tests.unit.base import TestCase
 
 MONGO_PROTOCOL_ID = '507f1f77bcf86cd799439011'
@@ -43,7 +47,7 @@ class TestProcessRun(TestCase):
         self.assertEqual(cm.exception.code, 0)
 
     @patch('ejudge_listener.tasks.insert_protocol_to_mongo', return_value=MONGO_PROTOCOL_ID)
-    @patch('ejudge_listener.tasks.get_full_protocol', return_value={'protocol': 'nice_protocol'})
+    @patch('ejudge_listener.tasks.read_protocol', return_value={'protocol': 'nice_protocol'})
     def test_db_contain_run_and_ejudge_contain_protocol(
             self,
             mock_get_full_protocol,
@@ -54,7 +58,7 @@ class TestProcessRun(TestCase):
         mock_insert_protocol_to_mongo.assert_called()
 
     @patch('ejudge_listener.tasks.insert_protocol_to_mongo', return_value=MONGO_PROTOCOL_ID)
-    @patch('ejudge_listener.tasks.get_full_protocol', side_effect=ProtocolNotFoundError)
+    @patch('ejudge_listener.tasks.read_protocol', side_effect=ProtocolNotFoundError)
     def test_db_contain_run_but_ejudge_doesnt_have_protocol(
             self,
             mock_get_full_protocol,
