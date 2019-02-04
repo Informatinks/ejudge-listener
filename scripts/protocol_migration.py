@@ -1,4 +1,3 @@
-import logging
 import math
 from typing import Optional
 
@@ -24,14 +23,6 @@ class Run(db.Model):
     ejudge_contest_id = Column('ej_contest_id', Integer)
 
 
-# Init logger
-logger = logging.getLogger('protocol-migration')
-file_handler = logging.FileHandler('protocol-migration.log')
-file_handler.setLevel(logging.DEBUG)
-log_fmt = '%(asctime)s - %(message)s'
-file_format = logging.Formatter(log_fmt)
-file_handler.setFormatter(file_format)
-
 # Init app
 app = create_app()
 app.app_context().push()
@@ -51,12 +42,12 @@ def process_protocol(run: EjudgeRun):
     try:
         protocol = read_protocol(run)
     except AuditNotFoundError:
-        logger.error(f'Protocol({run.contest_id}, {run.run_id}) audit -')
+        print(f'Protocol({run.contest_id}, {run.run_id}) audit -')
     except ProtocolNotFoundError:
-        logger.error(f'Protocol({run.contest_id}, {run.run_id}) proto -')
+        print(f'Protocol({run.contest_id}, {run.run_id}) proto -')
     else:
         mongo.db.protocol.insert_one(protocol)
-        logger.info(f'Protocol({run.contest_id}, {run.run_id}) +')
+        print(f'Protocol({run.contest_id}, {run.run_id}) +')
 
 
 def migrate():
@@ -75,7 +66,7 @@ def migrate():
                 process_protocol(ejudge_run)
             else:
                 msg = f'EjudgeRun({run.contest_id}, {run.run_id}) not found'
-                logger.error(msg)
+                print(msg)
 
         last_id = runs[-1].id
 
