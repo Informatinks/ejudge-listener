@@ -38,9 +38,10 @@ def get_ejudge_run(run: Run) -> Optional[EjudgeRun]:
     return ejudge_run
 
 
-def process_protocol(run: EjudgeRun):
+def process_protocol(run: EjudgeRun, run_id: int):
     try:
         protocol = read_protocol(run)
+        protocol['run_id'] = run_id
     except AuditNotFoundError:
         print(f'Protocol({run.contest_id}, {run.run_id}) audit -')
     except ProtocolNotFoundError:
@@ -63,7 +64,7 @@ def migrate():
         for run in runs:
             ejudge_run = get_ejudge_run(run)
             if ejudge_run is not None:
-                process_protocol(ejudge_run)
+                process_protocol(ejudge_run, Run.id)
             else:
                 msg = f'EjudgeRun({run.contest_id}, {run.run_id}) not found'
                 print(msg)
