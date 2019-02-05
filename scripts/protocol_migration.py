@@ -64,7 +64,7 @@ def migrate():
         for run in runs:
             ejudge_run = get_ejudge_run(run)
             if ejudge_run is not None:
-                process_protocol(ejudge_run, Run.id)
+                process_protocol(ejudge_run, run.id)
             else:
                 msg = f'EjudgeRun({run.contest_id}, {run.run_id}) not found'
                 print(msg)
