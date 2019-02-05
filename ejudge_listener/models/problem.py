@@ -2,11 +2,11 @@ import glob
 import os
 from zipfile import ZipFile
 
-from ejudge_listener.rmatics.ejudge.serve_internal import EjudgeContestCfg
 from ejudge_listener.models import db
+from ejudge_listener.protocol.run import read_file_unknown_encoding
+from ejudge_listener.rmatics.ejudge.serve_internal import EjudgeContestCfg
 from ejudge_listener.rmatics.utils.decorators import deprecated
 from ejudge_listener.rmatics.utils.json_type import JsonType
-from ejudge_listener.protocol.run import read_file_unknown_encoding
 
 
 class Problem(db.Model):

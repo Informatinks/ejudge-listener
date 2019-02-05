@@ -1,5 +1,3 @@
-import gzip
-import os
 import xml
 import xml.dom.minidom
 import zipfile
@@ -344,39 +342,6 @@ class EjudgeRun(db.Model):
             .first()
 
     @lazy
-    def _get_compilation_protocol(self):
-        filename = submit_path(PROTOCOLS_PATH, self.contest_id, self.run_id)
-        if filename:
-            if os.path.isfile(filename):
-                myopen = lambda x, y: open(x, y, encoding='utf-8')
-            else:
-                filename += '.gz'
-                myopen = gzip.open
-            try:
-                xml_file = myopen(filename, 'r')
-                try:
-                    res = xml_file.read()
-                    try:
-                        res = res.decode('cp1251').encode('utf8')
-                    except:
-                        pass
-
-                    try:
-                        return str(res, encoding='UTF-8')
-                    except TypeError:
-                        try:
-                            res = res.decode('cp1251').encode('utf8')
-                        except Exception:
-                            pass
-                        return res
-                except Exception as e:
-                    return e
-            except IOError as e:
-                return e
-        else:
-            return ''
-
-    @lazy
     def _get_protocol(self):
         filename = submit_path(PROTOCOLS_PATH, self.contest_id, self.run_id)
         if filename:
@@ -385,7 +350,6 @@ class EjudgeRun(db.Model):
             return '<a></a>'
 
     protocol = property(_get_protocol)
-    compilation_protocol = property(_get_compilation_protocol)
 
     @lazy
     def fetch_tested_protocol_data(self):

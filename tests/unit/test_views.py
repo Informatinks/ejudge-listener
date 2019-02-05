@@ -1,5 +1,6 @@
 import random
 from unittest.mock import patch
+
 from flask import url_for
 
 from tests.unit.base import TestCase
