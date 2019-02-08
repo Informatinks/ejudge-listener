@@ -1,3 +1,4 @@
+import concurrent.futures
 import math
 from typing import Optional
 
@@ -30,26 +31,28 @@ LIMIT_ROWS = 1000
 LAST_ID = -1
 
 
-def process_protocol(run: EjudgeRun, run_id: int) -> Optional[dict]:
+def process_protocol(ejudge_run_and_run) -> Optional[dict]:
     global LAST_ID
+    ej_run = ejudge_run_and_run[0]
+    run_id = ejudge_run_and_run[1].id
     LAST_ID = run_id
     try:
-        protocol = read_protocol(run)
+        protocol = read_protocol(ej_run)
         protocol['run_id'] = run_id
     except AuditNotFoundError:
-        print(f'Run({run_id}), Protocol({run.contest_id}, {run.run_id}) audit -')
+        print(f'Run({run_id}), Protocol({ej_run.contest_id}, {ej_run.run_id}) audit -')
     except ProtocolNotFoundError:
-        print(f'Run({run_id}), Protocol({run.contest_id}, {run.run_id}) proto -')
+        print(f'Run({run_id}), Protocol({ej_run.contest_id}, {ej_run.run_id}) proto -')
     else:
-        print(f'Run({run_id}), Protocol({run.contest_id}, {run.run_id}) +')
+        print(f'Run({run_id}), Protocol({ej_run.contest_id}, {ej_run.run_id}) +')
         return protocol
 
 
 def migrate(start_with_run_id: int = None):
     global LAST_ID
     if start_with_run_id:
-        count = db.session.query(Run).filter(Run.id > start_with_run_id).count()
         LAST_ID = start_with_run_id
+        count = db.session.query(Run).filter(Run.id > LAST_ID).count()
     else:
         count = db.session.query(Run).count()
         LAST_ID = db.session.query(func.min(Run.id)).scalar() - 1
@@ -68,8 +71,10 @@ def migrate(start_with_run_id: int = None):
             .options(joinedload(EjudgeRun.problem))
         )
 
-        protocols = (process_protocol(ej_run, run.id) for ej_run, run in runs)
+        with concurrent.futures.ProcessPoolExecutor() as executor:
+            protocols = executor.map(process_protocol, runs)
         not_empty_protocols = filter(None, protocols)
+
         try:
             mongo.db.protocol.insert_many(not_empty_protocols)
         except InvalidOperation:
