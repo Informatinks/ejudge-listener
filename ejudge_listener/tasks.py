@@ -4,6 +4,7 @@ import requests
 from flask import current_app
 from requests import RequestException
 
+from ejudge_listener import create_app
 from ejudge_listener.exceptions import ProtocolNotFoundError
 from ejudge_listener.extensions import mongo, rq
 from ejudge_listener.models import db
