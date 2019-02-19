@@ -49,7 +49,6 @@ def send_non_terminal_to_front(ej_request: EjudgeRequest):
 def send_json_to_front(json: dict):
     try:
         r = requests.post(current_app.config['EJUDGE_FRONT_URL'], json=json, timeout=5)
-        r.raise_for_status()
     except requests.RequestException as e:
         msg = 'Ejudge-front bad response or timeout'
         current_app.logger.exception(msg)
