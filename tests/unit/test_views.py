@@ -15,15 +15,23 @@ def random_id():
 
 @patch('rq.queue.Queue.enqueue')
 class TestView(TestCase):
-    valid_int_request = {'contest_id': random_id(), 'run_id': random_id()}
+    valid_int_request = {
+        'contest_id': random_id(),
+        'run_id': random_id(),
+        'new_status': 0,
+    }
 
-    valid_str_request = {'contest_id': str(random_id()), 'run_id': str(random_id())}
+    valid_str_request = {
+        'contest_id': str(random_id()),
+        'run_id': str(random_id()),
+        'new_status': 0,
+    }
 
     invalid_ids = ['', 'one', 'dog', True, False, None]  # All possible
     invalid_requests = [{'contest_id': i_id, 'run_id': i_id} for i_id in invalid_ids]
 
-    def assert422(self, response, message=None):
-        self.assertStatus(response, 422, message)
+    def assert400(self, response, message=None):
+        self.assertStatus(response, 400, message)
 
     def send_request(self, params):
         return self.client.get(url_for('update_run', **params))
@@ -42,5 +50,5 @@ class TestView(TestCase):
         responses = self.send_6_invalid_requests()
         for response in responses:
             with self.subTest():
-                self.assert422(response)
+                self.assert400(response)
         mock_enqueue.assert_not_called()

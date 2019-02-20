@@ -1,17 +1,22 @@
-from webargs import fields
-from webargs.flaskparser import use_args
+from flask import request
+from werkzeug.exceptions import BadRequest
 
 from ejudge_listener.extensions import rq
+from ejudge_listener.protocol.run_statuses import TERMINAL_RUN_STATUSES
+from ejudge_listener.schemas import EjudgeRequestSchema
 from ejudge_listener.utils import jsonify
 
-# noinspection PyUnresolvedReferences
-update_run_args = {
-    'contest_id': fields.Int(required=True),
-    'run_id': fields.Int(required=True),
-}
+ej_request_schema = EjudgeRequestSchema()
 
 
-@use_args(update_run_args)
-def update_run(args):
-    rq.get_queue('ejudge_listener').enqueue('ejudge_listener.tasks.send_to_ejudge_front', **args)
+def update_run():
+    ej_request, errors = ej_request_schema.load(request.args)
+    if errors:
+        raise BadRequest()
+    print(ej_request)
+    q = rq.get_queue('ejudge_listener')
+    if ej_request.status in TERMINAL_RUN_STATUSES:
+        q.enqueue('ejudge_listener.tasks.send_terminal_to_front', ej_request)
+    else:
+        q.enqueue('ejudge_listener.tasks.send_non_terminal_to_front', ej_request)
     return jsonify({})

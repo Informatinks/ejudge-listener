@@ -1,12 +1,12 @@
 from unittest.mock import MagicMock, patch
 
-from requests import HTTPError
+from requests import HTTPError, RequestException
 
 from ejudge_listener.exceptions import ProtocolNotFoundError
+from ejudge_listener.requests import EjudgeRequest
 from ejudge_listener.tasks import (
     process_run,
     send_json_to_front,
-    send_to_ejudge_front
 )
 from tests.unit.base import TestCase
 
@@ -28,8 +28,11 @@ process_run_10_1_json = {
 TERMINAL_STATUS = 0
 NON_TERMINAL_STATUS = 96
 
-LOG_MSG = 'Run with run_id=10 contest_id=1 sended successfully'
-ERROR_LOG_MSG = 'Ejudge-front bad response or timeout, task requeued'
+LOG_MSG = 'Run with run_id=10 contest_id=1 sent successfully'
+ERROR_LOG_MSG = 'Ejudge-front bad response or timeout'
+
+EJUDGE_REQUEST_WITH_NON_EXISTING_RUN = EjudgeRequest(7777, 5555, 0)
+EJUDGE_REQUEST_WITH_EXISTING_RUN = EjudgeRequest(10, 1, 0)
 
 
 class TestProcessRun(TestCase):
@@ -43,7 +46,7 @@ class TestProcessRun(TestCase):
     # noinspection PyUnresolvedReferences,PyTypeChecker
     def test_db_doesnt_contain_run(self):
         with self.assertRaises(SystemExit) as cm:
-            process_run(7777, 5555)
+            process_run(EJUDGE_REQUEST_WITH_NON_EXISTING_RUN)
         self.assertEqual(cm.exception.code, 0)
 
     @patch('ejudge_listener.tasks.insert_protocol_to_mongo', return_value=MONGO_PROTOCOL_ID)
@@ -54,7 +57,7 @@ class TestProcessRun(TestCase):
             mock_insert_protocol_to_mongo,
 
     ):
-        self.assertEqual(process_run(10, 1), process_run_10_1_json)
+        self.assertEqual(process_run(EJUDGE_REQUEST_WITH_EXISTING_RUN), process_run_10_1_json)
         mock_insert_protocol_to_mongo.assert_called()
 
     @patch('ejudge_listener.tasks.insert_protocol_to_mongo', return_value=MONGO_PROTOCOL_ID)
@@ -65,11 +68,10 @@ class TestProcessRun(TestCase):
             mock_insert_protocol_to_mongo
     ):
         with self.assertRaises(ProtocolNotFoundError):
-            process_run(10, 1)
+            process_run(EJUDGE_REQUEST_WITH_EXISTING_RUN)
         mock_insert_protocol_to_mongo.assert_not_called()
 
 
-@patch('rq.queue.Queue.enqueue')
 @patch('requests.post')
 class TestSendJson(TestCase):
     def setUp(self):
@@ -83,42 +85,22 @@ class TestSendJson(TestCase):
     def test_send_json_to_working_front(
             self,
             mock_app_logger,
-            mock_response,
-            mock_enqueue
+            mock_response
     ):
         run_json = process_run_10_1_json
-        send_json_to_front(10, 1, run_json)
+        send_json_to_front(run_json)
         mock_app_logger.assert_called_once_with(LOG_MSG)
-        mock_enqueue.assert_not_called()
 
     @patch('ejudge_listener.tasks.current_app.logger.exception')
-    def test_send_json_to_not_working_front_with_terminal_status(
+    def test_send_json_to_not_working_front(
             self,
             mock_app_logger,
             mock_response,
-            mock_enqueue
     ):
         run_json = process_run_10_1_json
         run_json['status'] = TERMINAL_STATUS
 
         mock_response.return_value.raise_for_status = MagicMock(side_effect=HTTPError())
-
-        send_json_to_front(10, 1, run_json)
+        with self.assertRaises(RequestException):
+            send_json_to_front(run_json)
         mock_app_logger.assert_called_once_with(ERROR_LOG_MSG)
-        mock_enqueue.assert_called_once_with(send_to_ejudge_front, 1, 10, run_json)
-
-    @patch('ejudge_listener.tasks.current_app.logger.exception')
-    def test_send_json_to_not_working_front_with_not_terminal_status(
-            self,
-            mock_app_logger,
-            mock_response,
-            mock_enqueue
-    ):
-        run_json = process_run_10_1_json
-        run_json['status'] = NON_TERMINAL_STATUS
-
-        mock_response.return_value.raise_for_status = MagicMock(side_effect=HTTPError())
-
-        send_json_to_front(10, 1, run_json)
-        mock_app_logger.assert_called_once_with(ERROR_LOG_MSG)
-        mock_enqueue.assert_not_called()

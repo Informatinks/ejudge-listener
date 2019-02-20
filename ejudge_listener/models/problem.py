@@ -1,11 +1,8 @@
-import glob
 import os
-from zipfile import ZipFile
 
 from ejudge_listener.models import db
 from ejudge_listener.protocol.run import read_file_unknown_encoding
 from ejudge_listener.rmatics.ejudge.serve_internal import EjudgeContestCfg
-from ejudge_listener.rmatics.utils.decorators import deprecated
 from ejudge_listener.rmatics.utils.json_type import JsonType
 
 
@@ -89,28 +86,6 @@ class EjudgeProblem(Problem):
 
         return db.session.query(EjudgeProblem).filter_by(id=problem_id).one()
 
-    @deprecated('view.serializers.ProblemSchema')
-    def serialize(self):
-        if self.sample_tests:
-            self.generateSamplesJson(force_update=True)
-
-        attrs = [
-            'id',
-            'name',
-            'content',
-            'timelimit',
-            'memorylimit',
-            'show_limits',
-            'sample_tests_json',
-            'output_only',
-        ]
-        problem_dict = {
-            attr: getattr(self, attr, 'undefined')
-            for attr in attrs
-        }
-        # problem_dict['languages'] = context.get_allowed_languages()
-        return problem_dict
-
     def get_test(self, test_num, size=255):
         conf = EjudgeContestCfg(number=self.ejudge_contest_id)
         prob = conf.getProblem(self.problem_id)
@@ -167,86 +142,3 @@ class EjudgeProblem(Problem):
         corr_file_name = (prob.tests_dir + prob.corr_pat) % int(test_num)
         return os.stat(corr_file_name).st_size
 
-    def get_checker(self):
-        conf = EjudgeContestCfg(number=self.ejudge_contest_id)
-        prob = conf.getProblem(self.problem_id)
-
-        # generate dir with checker
-        if conf.advanced_layout:
-            checker_dir = os.path.join(conf.contest_path, "problems", prob.internal_name)
-        else:
-            checker_dir = os.path.join(conf.contest_path, "checkers")
-
-        # trying to find checker
-        find_res = glob.glob(os.path.join(checker_dir, "check_{0}.*".format(prob.internal_name)))
-        check_src = None
-        checker_ext = None
-        if find_res:
-            check_src = open(find_res[0], "r").read()
-            checker_ext = os.path.splitext(find_res[0])[1]
-
-        # if checker not found then try polygon package
-        downloads_dir = os.path.join(conf.contest_path, "download")
-        if check_src is None and os.path.exists(downloads_dir):
-            download_archive_mask = "{0}-*$linux.zip".format(prob.internal_name)
-            find_archive_result = glob.glob(os.path.join(downloads_dir, download_archive_mask))
-            download_archive_path = find_archive_result[0] if find_archive_result else None
-            archive = None
-            if download_archive_path is not None:
-                archive = ZipFile(download_archive_path)
-            if archive is not None:
-                member_path = None
-                for file in archive.namelist():
-                    if file.startswith("check."):
-                        member_path = file
-                        break
-                try:
-                    check_src = archive.open(member_path).read()
-                    checker_ext = os.path.splitext(member_path)[1]
-                except KeyError:
-                    check_src = None
-
-        if check_src is None:
-            check_src = "checker not found"
-
-        return check_src, checker_ext
-
-    def generateSamples(self):
-        res = ""
-        if self.sample_tests != '':
-            res = "<div class='problem-statement'><div class='sample-tests'><div class='section-title'>Примеры</div>"
-
-            for i in self.sample_tests.split(","):
-                inp = self.get_test(i, 4096)
-                if inp[-1] == '\n':
-                    inp = inp[:-1]
-                corr = self.get_corr(i, 4096)
-                if corr[-1] == '\n':
-                    corr = corr[:-1]
-                res += "<div class='sample-test'>"
-                res += "<div class='input'><div class='title'>Входные данные</div><pre class='content'>"
-                res += inp
-                res += "</pre></div><div class='output'><div class='title'>Выходные данные</div><pre class='content'>"
-                res += corr
-                res += "</pre></div></div>"
-
-            res += "</div></div>"
-
-        self.sample_tests_html = res
-        return self.sample_tests
-
-    def generateSamplesJson(self, force_update=False):
-        if self.sample_tests != '':
-            if not self.sample_tests_json:
-                self.sample_tests_json = {}
-            for test in self.sample_tests.split(','):
-                if not force_update and test in self.sample_tests_json:
-                    continue
-
-                test_input = self.get_test(test, 4096)
-                test_correct = self.get_corr(test, 4096)
-
-                self.sample_tests_json[test] = {
-                    'input': test_input,
-                    'correct': test_correct,
-                }

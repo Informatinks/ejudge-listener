@@ -334,13 +334,6 @@ class EjudgeRun(db.Model):
             except ValueError:
                 pass
 
-    @staticmethod
-    def get_by(run_id, contest_id):
-        return db.session.query(EjudgeRun) \
-            .filter(EjudgeRun.run_id == int(run_id)) \
-            .filter(EjudgeRun.contest_id == int(contest_id)) \
-            .first()
-
     @lazy
     def _get_protocol(self):
         filename = submit_path(PROTOCOLS_PATH, self.contest_id, self.run_id)
@@ -356,5 +349,3 @@ class EjudgeRun(db.Model):
         self.xml = xml.dom.minidom.parseString(str(self.protocol))
         self.parsetests()
 
-    def _set_output_archive(self, val):
-        self.output_archive = val
