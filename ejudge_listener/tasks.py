@@ -47,11 +47,13 @@ def send_terminal(ej_request: EjudgeRequest, data: Optional[dict] = None) -> Non
             if is_client_error(status_code):
                 mongo_rollback(data)
                 msg = LogMessage('send_terminal', 'cancel', ej_request, status_code)
+                logging.exception(str(msg))
             else:
                 q = rq.get_queue('ejudge_listener')
                 msg = LogMessage('send_terminal', 'retry', ej_request, status_code)
+                logging.exception(str(msg))
                 q.enqueue(send_terminal, ej_request, data)
-            logging.exception(str(msg))
+
         db.session.rollback()
 
 
