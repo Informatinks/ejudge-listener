@@ -31,7 +31,6 @@ def send_to_front(ej_request: EjudgeRequest):
 
 
 def send_terminal(ej_request: EjudgeRequest, data: Optional[dict] = None) -> None:
-    init_logger()
     app = create_app()
     with app.app_context():
         try:
