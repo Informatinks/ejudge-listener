@@ -13,5 +13,5 @@ def update_run():
     if errors:
         raise BadRequest()
     q = rq.get_queue('ejudge_listener')
-    q.enqueue('ejudge_listener.tasks.send_to_front')
+    q.enqueue('ejudge_listener.tasks.send_to_front', ej_request)
     return jsonify({})
