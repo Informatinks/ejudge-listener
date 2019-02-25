@@ -27,7 +27,7 @@ class LogMessage:
     ):
         """
         :param func_name: tasks's function name.
-        :param task: done, cancel, retry.
+        :param task: success, failure, retry, revoked.
         :param request: request from ejudge.
         """
         self.func_name = func_name

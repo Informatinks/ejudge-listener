@@ -5,7 +5,7 @@ from typing import Optional
 import requests
 from bson import ObjectId
 from flask import current_app
-from requests import RequestException
+from requests import RequestException, HTTPError
 
 from ejudge_listener import create_app, init_logger
 from ejudge_listener.exceptions import ProtocolNotFoundError
@@ -35,26 +35,37 @@ def send_terminal(ej_request: EjudgeRequest, data: Optional[dict] = None) -> Non
     with app.app_context():
         try:
             data = data or process_run(ej_request)
+        except ProtocolNotFoundError:
+            msg = LogMessage('send_terminal', 'revoked', ej_request)
+            logging.exception(str(msg))
+            db.session.rollback()
+            return
+        try:
             r = requests.post(
                 current_app.config['EJUDGE_FRONT_URL'], json=data, timeout=5
             )
             r.raise_for_status()
-        except ProtocolNotFoundError:
-            msg = LogMessage('send_terminal', 'cancel', ej_request)
-            logging.exception(str(msg))
-        except RequestException as e:
+        except HTTPError as e:
             status_code = e.response.status_code
             if is_client_error(status_code):
                 mongo_rollback(data)
-                msg = LogMessage('send_terminal', 'cancel', ej_request, status_code)
+                msg = LogMessage('send_terminal', 'revoked', ej_request, status_code)
                 logging.exception(str(msg))
             else:
-                q = rq.get_queue('ejudge_listener')
                 msg = LogMessage('send_terminal', 'retry', ej_request, status_code)
                 logging.exception(str(msg))
+                q = rq.get_queue('ejudge_listener')
                 q.enqueue(send_terminal, ej_request, data)
-
-        db.session.rollback()
+        except RequestException:
+            msg = LogMessage('send_terminal', 'retry', ej_request)
+            logging.exception(str(msg))
+            q = rq.get_queue('ejudge_listener')
+            q.enqueue(send_terminal, ej_request, data)
+        else:
+            msg = LogMessage('send_terminal', 'success', ej_request)
+            logging.info(str(msg))
+        finally:
+            db.session.rollback()
 
 
 def send_non_terminal(ej_request: EjudgeRequest) -> None:
@@ -64,10 +75,10 @@ def send_non_terminal(ej_request: EjudgeRequest) -> None:
         r = requests.post(current_app.config['EJUDGE_FRONT_URL'], json=data, timeout=5)
         r.raise_for_status()
     except requests.RequestException:
-        msg = LogMessage('send_non_terminal', 'cancel', ej_request)
+        msg = LogMessage('send_non_terminal', 'revoked', ej_request)
         logging.exception(str(msg))
     else:
-        msg = LogMessage('send_non_terminal', 'done', ej_request)
+        msg = LogMessage('send_non_terminal', 'success', ej_request)
         logging.info(str(msg))
 
 
