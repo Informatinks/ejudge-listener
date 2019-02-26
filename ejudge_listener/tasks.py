@@ -7,7 +7,6 @@ from typing import Optional
 import requests
 from bson import ObjectId
 from flask import current_app
-from requests import RequestException, HTTPError
 
 from ejudge_listener import create_app, init_logger
 from ejudge_listener.exceptions import ProtocolNotFoundError
@@ -66,7 +65,7 @@ def send_delayed_protocol(ej_request: EjudgeRequest):
 
     try:
         send_data_to_front(data)
-    except HTTPError as e:
+    except requests.HTTPError as e:
         status_code = e.response.status_code
         if is_4xx_error(status_code):
             msg = make_log_message(
@@ -77,7 +76,7 @@ def send_delayed_protocol(ej_request: EjudgeRequest):
             msg = make_log_message('send_terminal', 'retry', ej_request, status_code)
             enqueue_task(send_delayed_protocol, ej_request, data)
         logging.exception(msg)
-    except RequestException:
+    except requests.RequestException:
         logging.exception(
             make_log_message('send_delayed_protocol', 'retry', ej_request)
         )
@@ -98,7 +97,7 @@ def send_terminal(ej_request: EjudgeRequest, data: Optional[dict] = None) -> Non
 
     try:
         send_data_to_front(data)
-    except HTTPError as e:
+    except requests.HTTPError as e:
         status_code = e.response.status_code
         if is_4xx_error(status_code):
             msg = make_log_message('send_terminal', 'revoked', ej_request, status_code)
@@ -107,7 +106,7 @@ def send_terminal(ej_request: EjudgeRequest, data: Optional[dict] = None) -> Non
             msg = make_log_message('send_terminal', 'retry', ej_request, status_code)
             enqueue_task(send_terminal, ej_request, data)
         logging.exception(msg)
-    except RequestException:
+    except requests.RequestException:
         logging.exception(make_log_message('send_terminal', 'retry', ej_request))
         enqueue_task(send_terminal, ej_request, data)
     else:
@@ -164,5 +163,5 @@ def mongo_rollback(data: dict) -> None:
     mongo.db.protocol.delete_one({'_id', ObjectId(mongo_id)})
 
 
-def is_4xx_error(response) -> bool:
-    return 400 <= response.status_code < 500
+def is_4xx_error(status_code) -> bool:
+    return 400 <= status_code < 500
