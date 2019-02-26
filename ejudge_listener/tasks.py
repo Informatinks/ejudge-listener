@@ -1,5 +1,7 @@
+import functools
 import logging
 import sys
+from time import sleep
 from typing import Optional
 
 import requests
@@ -16,7 +18,7 @@ from ejudge_listener.protocol.protocol import read_protocol
 from ejudge_listener.protocol.run_statuses import TERMINAL_RUN_STATUSES
 from ejudge_listener.requests import EjudgeRequest
 from ejudge_listener.schemas import EjudgeRunSchema, EjudgeRequestSchema
-from ejudge_listener.utils import LogMessage
+from ejudge_listener.utils import make_log_message
 
 run_schema = EjudgeRunSchema()
 ejudge_request_schema = EjudgeRequestSchema()
@@ -30,42 +32,81 @@ def send_to_front(ej_request: EjudgeRequest):
         send_non_terminal(ej_request)
 
 
-def send_terminal(ej_request: EjudgeRequest, data: Optional[dict] = None) -> None:
-    app = create_app()
-    with app.app_context():
-        try:
-            data = data or process_run(ej_request)
-        except ProtocolNotFoundError:
-            msg = LogMessage('send_terminal', 'revoked', ej_request)
-            logging.exception(str(msg))
-            db.session.rollback()
-            return
-        try:
-            r = requests.post(
-                current_app.config['EJUDGE_FRONT_URL'], json=data, timeout=5
-            )
-            r.raise_for_status()
-        except HTTPError as e:
-            status_code = e.response.status_code
-            if is_client_error(status_code):
-                mongo_rollback(data)
-                msg = LogMessage('send_terminal', 'revoked', ej_request, status_code)
-                logging.exception(str(msg))
-            else:
-                msg = LogMessage('send_terminal', 'retry', ej_request, status_code)
-                logging.exception(str(msg))
-                q = rq.get_queue('ejudge_listener')
-                q.enqueue(send_terminal, ej_request, data)
-        except RequestException:
-            msg = LogMessage('send_terminal', 'retry', ej_request)
-            logging.exception(str(msg))
-            q = rq.get_queue('ejudge_listener')
-            q.enqueue(send_terminal, ej_request, data)
+def enqueue_task(func, *args, **kwargs):
+    q = rq.get_queue('ejudge_listener')
+    q.enqueue(func, *args, **kwargs)
+
+
+def send_data_to_front(data):
+    r = requests.post(
+        current_app.config['EJUDGE_FRONT_URL'], json=data, timeout=5
+    )
+    r.raise_for_status()
+
+
+def make_app_and_push_context(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        app = create_app()
+        with app.app_context():
+            return func(*args, **kwargs)
+    return wrapper
+
+
+@make_app_and_push_context
+def send_delayed_protocol(ej_request: EjudgeRequest):
+    # We sleep 2 seconds because FS may not sync protocol yet
+    sleep(2)
+    try:
+        data = process_run(ej_request)
+    except ProtocolNotFoundError:
+        logging.exception(make_log_message('send_delayed_protocol', 'revoked', ej_request))
+        return  # raise ? to put it to failed tasks
+
+    try:
+        send_data_to_front(data)
+    except HTTPError as e:
+        status_code = e.response.status_code
+        if is_4xx_error(status_code):
+            msg = make_log_message('send_delayed_protocol', 'revoked', ej_request, status_code)
+            mongo_rollback(data)
         else:
-            msg = LogMessage('send_terminal', 'success', ej_request)
-            logging.info(str(msg))
-        finally:
-            db.session.rollback()
+            msg = make_log_message('send_terminal', 'retry', ej_request, status_code)
+            enqueue_task(send_delayed_protocol, ej_request, data)
+        logging.exception(msg)
+    except RequestException:
+        logging.exception(make_log_message('send_delayed_protocol', 'retry', ej_request))
+        enqueue_task(send_delayed_protocol, ej_request, data)
+    else:
+        logging.info(make_log_message('send_terminal', 'success', ej_request))
+
+
+@make_app_and_push_context
+def send_terminal(ej_request: EjudgeRequest, data: Optional[dict] = None) -> None:
+    try:
+        data = data or process_run(ej_request)
+    except ProtocolNotFoundError:
+        # not logging.exception because it ordinary behavior
+        logging.error(make_log_message('send_terminal', 'revoked', ej_request))
+        enqueue_task(send_delayed_protocol, ej_request)
+        return
+
+    try:
+        send_data_to_front(data)
+    except HTTPError as e:
+        status_code = e.response.status_code
+        if is_4xx_error(status_code):
+            msg = make_log_message('send_terminal', 'revoked', ej_request, status_code)
+            mongo_rollback(data)
+        else:
+            msg = make_log_message('send_terminal', 'retry', ej_request, status_code)
+            enqueue_task(send_terminal, ej_request, data)
+        logging.exception(msg)
+    except RequestException:
+        logging.exception(make_log_message('send_terminal', 'retry', ej_request))
+        enqueue_task(send_terminal, ej_request, data)
+    else:
+        logging.info(make_log_message('send_terminal', 'success', ej_request))
 
 
 def send_non_terminal(ej_request: EjudgeRequest) -> None:
@@ -75,31 +116,31 @@ def send_non_terminal(ej_request: EjudgeRequest) -> None:
         r = requests.post(current_app.config['EJUDGE_FRONT_URL'], json=data, timeout=5)
         r.raise_for_status()
     except requests.RequestException:
-        msg = LogMessage('send_non_terminal', 'revoked', ej_request)
-        logging.exception(str(msg))
+        logging.exception(make_log_message('send_non_terminal', 'revoked', ej_request))
     else:
-        msg = LogMessage('send_non_terminal', 'success', ej_request)
-        logging.info(str(msg))
+        logging.info(make_log_message('send_non_terminal', 'success', ej_request))
 
 
 def process_run(ej_request: EjudgeRequest) -> dict:
-    run = (
-        db.session.query(EjudgeRun)
-        .filter_by(run_id=ej_request.run_id, contest_id=ej_request.contest_id)
-        .one_or_none()
-    )
-    if run is None:
-        db.session.rollback()
-        msg = (
-            f'Run with run_id={ej_request.run_id} '
-            f'contest_id={ej_request.contest_id}, doesn\'t exist'
+    try:
+        run = (
+            db.session.query(EjudgeRun)
+            .filter_by(run_id=ej_request.run_id, contest_id=ej_request.contest_id)
+            .one_or_none()
         )
-        logging.exception(msg)
-        sys.exit(0)
-    protocol = read_protocol(run)
-    mongo_protocol_id = insert_protocol_to_mongo(protocol)
-    run.mongo_protocol_id = mongo_protocol_id
-    data = run_schema.dump(run).data
+        if run is None:
+            msg = (
+                f'Run with run_id={ej_request.run_id} '
+                f'contest_id={ej_request.contest_id}, doesn\'t exist'
+            )
+            logging.exception(msg)
+            sys.exit(0)
+        protocol = read_protocol(run)
+        mongo_protocol_id = insert_protocol_to_mongo(protocol)
+        run.mongo_protocol_id = mongo_protocol_id
+        data = run_schema.dump(run).data
+    finally:
+        db.session.rollback()
     return data
 
 
@@ -119,5 +160,5 @@ def mongo_rollback(data: dict) -> None:
     mongo.db.protocol.delete_one({'_id', ObjectId(mongo_id)})
 
 
-def is_client_error(status_code) -> bool:
-    return 400 <= status_code < 500
+def is_4xx_error(response) -> bool:
+    return 400 <= response.status_code < 500

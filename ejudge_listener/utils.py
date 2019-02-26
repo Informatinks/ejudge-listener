@@ -17,28 +17,21 @@ def jsonify(data, status_code=200):
     return flask_jsonify(response), status_code
 
 
-class LogMessage:
-    def __init__(
-        self,
+def make_log_message(
         func_name: str,
         task: str,
         request: EjudgeRequest,
-        front_status: Optional[int] = None,
-    ):
-        """
-        :param func_name: tasks's function name.
-        :param task: success, failure, retry, revoked.
-        :param request: request from ejudge.
-        """
-        self.func_name = func_name
-        self.task = task
-        self.request = str(request)
-        self.front_status = front_status
-
-    def __str__(self):
-        string = f'func_name: {self.func_name}, ' \
-            f'task: {self.task}, ' \
-            f'request: {self.request!r}'
-        status = self.front_status
-        string += f', front_status: {status}' if status else ''
-        return string
+        response_status: Optional[int] = None):
+    """
+    :param func_name: tasks's function name.
+    :param task: success, failure, retry, revoked.
+    :param request: request from ejudge.
+    :param response_status: HTTP status if exists
+    """
+    request = str(request)
+    string = f'{func_name}, ' \
+        f'task: {task}, ' \
+        f'request: {request!r}'
+    status = response_status
+    string += f', front_status: {status}' if status else ''
+    return string
