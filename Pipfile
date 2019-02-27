@@ -18,6 +18,7 @@ rq = "*"
 webargs = "*"
 flask-rq2 = "*"
 flask-pymongo = "*"
+celery = {extras = ["redis"],version = "*"}
 
 [requires]
 python_version = "3.6"
