@@ -14,9 +14,7 @@ flask = "*"
 flask-sqlalchemy = "*"
 pymysql = "*"
 requests = "*"
-rq = "*"
 webargs = "*"
-flask-rq2 = "*"
 flask-pymongo = "*"
 celery = {extras = ["redis"],version = "*"}
 

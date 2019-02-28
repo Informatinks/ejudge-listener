@@ -4,9 +4,7 @@ celery[redis]==4.2.1
 certifi==2018.11.29
 chardet==3.0.4
 click==7.0
-croniter==0.3.27
 flask-pymongo==2.2.0
-flask-rq2==18.3
 flask-sqlalchemy==2.3.2
 flask==1.0.2
 idna==2.8
@@ -17,13 +15,9 @@ markupsafe==1.1.1
 marshmallow==2.18.1
 pymongo==3.7.2
 pymysql==0.9.3
-python-dateutil==2.8.0
 pytz==2018.9
 redis==3.2.0
 requests==2.21.0
-rq-scheduler==0.9
-rq==0.13.0
-six==1.12.0
 sqlalchemy==1.2.18
 urllib3==1.24.1
 vine==1.2.0
