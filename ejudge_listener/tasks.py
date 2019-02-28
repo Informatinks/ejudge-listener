@@ -7,6 +7,7 @@ from typing import Optional
 import requests
 from bson import ObjectId
 from flask import current_app
+from sqlalchemy.orm import joinedload
 
 from ejudge_listener import create_app, init_logger
 from ejudge_listener.exceptions import ProtocolNotFoundError
@@ -129,6 +130,7 @@ def process_run(ej_request: EjudgeRequest) -> dict:
     run = (
         db.session.query(EjudgeRun)
         .filter_by(run_id=ej_request.run_id, contest_id=ej_request.contest_id)
+        .options(joinedload(EjudgeRun.problem))
         .one_or_none()
     )
 
