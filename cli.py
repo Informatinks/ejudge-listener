@@ -4,7 +4,6 @@ import unittest
 
 import click
 from flask.cli import with_appcontext
-from teamcity.unittestpy import TeamcityTestRunner
 
 THIS_FILE = os.path.abspath(os.path.dirname(__file__))
 TESTS_DIR = os.path.join(THIS_FILE, 'tests/')
@@ -19,6 +18,7 @@ def test(teamcity, verbosity):
     tests = loader.discover(TESTS_DIR, pattern='test*.py')
 
     if teamcity:
+        from teamcity.unittestpy import TeamcityTestRunner
         runner = TeamcityTestRunner()
     else:
         runner = unittest.TextTestRunner(verbosity=verbosity)
