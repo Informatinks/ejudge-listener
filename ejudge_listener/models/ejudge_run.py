@@ -2,18 +2,16 @@ import xml
 import xml.dom.minidom
 import zipfile
 
+from flask import current_app
+
 from ejudge_listener.exceptions import AuditNotFoundError
 from ejudge_listener.models import db
 from ejudge_listener.protocol.ejudge_archive import EjudgeArchiveReader
 from ejudge_listener.protocol.run import (
     safe_open,
     submit_path,
-    SOURCES_PATH,
-    AUDIT_PATH,
     to32,
-    OUTPUT_PATH,
     get_string_status,
-    PROTOCOLS_PATH,
     get_protocol_from_file,
 )
 
@@ -127,7 +125,8 @@ class EjudgeRun(db.Model):
     @lazy
     def get_audit(self):
         try:
-            data = safe_open(submit_path(AUDIT_PATH, self.contest_id, self.run_id), 'r').read()
+            data = safe_open(submit_path(current_app.config['AUDIT_PATH'],
+                                         self.contest_id, self.run_id), 'r').read()
         except FileNotFoundError:
             raise AuditNotFoundError  # TODO: исправить этот костыль, он относится к run.py:188
         if type(data) == bytes:
@@ -136,7 +135,8 @@ class EjudgeRun(db.Model):
 
     @lazy
     def get_sources(self):
-        data = safe_open(submit_path(SOURCES_PATH, self.contest_id, self.run_id), 'rb').read()
+        data = safe_open(submit_path(current_app.config['SOURCES_PATH'],
+                                     self.contest_id, self.run_id), 'rb').read()
         for encoding in ['utf-8', 'ascii', 'windows-1251']:
             try:
                 data = data.decode(encoding)
@@ -170,7 +170,8 @@ class EjudgeRun(db.Model):
     def get_output_archive(self):
         if "output_archive" not in self.__dict__:
             self.output_archive = EjudgeArchiveReader(
-                submit_path(OUTPUT_PATH, self.contest_id, self.run_id))
+                submit_path(current_app.config['OUTPUT_PATH'],
+                            self.contest_id, self.run_id))
         return self.output_archive
 
     def get_test_full_protocol(self, test_num):
@@ -336,7 +337,8 @@ class EjudgeRun(db.Model):
 
     @lazy
     def _get_protocol(self):
-        filename = submit_path(PROTOCOLS_PATH, self.contest_id, self.run_id)
+        filename = submit_path(current_app.config['PROTOCOLS_PATH'],
+                               self.contest_id, self.run_id)
         if filename:
             return get_protocol_from_file(filename)
         else:
