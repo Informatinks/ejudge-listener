@@ -13,7 +13,6 @@ def create_app():
     app = Flask(__name__)
     app.config.from_pyfile('../configs/production.cfg', silent=True)
     db.init_app(app)
-    mongo.init_app(app)
     rq.init_app(app)
     setup_routes(app)
     register_error_handlers(app)

@@ -6,7 +6,7 @@ from ejudge_listener.requests import EjudgeRequest
 class EjudgeRequestSchema(Schema):
     run_id = fields.Integer(required=True)
     contest_id = fields.Integer(required=True)
-    status = fields.Integer(required=True, load_from="new_status")
+    status = fields.Integer(required=True, load_from='new_status')
 
     @post_load
     def _(self, data):
