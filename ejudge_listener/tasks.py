@@ -114,6 +114,7 @@ def send_terminal(ej_request: EjudgeRequest, data: Optional[dict] = None) -> Non
         logging.info(make_log_message('send_terminal', 'success', ej_request))
 
 
+@create_app_and_push_context
 def send_non_terminal(ej_request: EjudgeRequest) -> None:
     init_logger()
     data = ejudge_request_schema.dump(ej_request).data
@@ -142,10 +143,10 @@ def process_run(ej_request: EjudgeRequest) -> dict:
         logging.exception(msg)
         sys.exit(0)
     protocol = read_protocol(run)
+    mongo.init_app(current_app)
     mongo_protocol_id = insert_protocol_to_mongo(protocol)
     run.mongo_protocol_id = mongo_protocol_id
     data = run_schema.dump(run).data
-
     return data
 
 
