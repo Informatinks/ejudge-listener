@@ -7,10 +7,9 @@ from sqlalchemy import Column, Integer, func
 from sqlalchemy.orm import joinedload
 
 from ejudge_listener import create_app
-from ejudge_listener.exceptions import AuditNotFoundError, ProtocolNotFoundError
-from ejudge_listener.extensions import mongo
+from ejudge_listener.protocol.exceptions import AuditNotFoundError, ProtocolNotFoundError
+from ejudge_listener.extensions import mongo, db
 from ejudge_listener.models import EjudgeRun
-from ejudge_listener.models.base import db
 from ejudge_listener.protocol.protocol import read_protocol
 
 

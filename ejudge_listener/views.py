@@ -1,17 +1,21 @@
 from flask import request
-from werkzeug.exceptions import BadRequest
 
-from ejudge_listener.extensions import rq
-from ejudge_listener.schemas import EjudgeRequestSchema
-from ejudge_listener.utils import jsonify
+from ejudge_listener.flow import EjudgeRequestSchema
+from .protocol import run
+from .api import jsonify
+from .tasks import send_non_terminal, load_protocol, insert_to_mongo, send_terminal
+
+send_terminal_chain = load_protocol.s() | insert_to_mongo.s() | send_terminal.s()
 
 ej_request_schema = EjudgeRequestSchema()
 
 
 def update_run():
-    ej_request, errors = ej_request_schema.load(request.args)
-    if errors:
-        raise BadRequest()
-    q = rq.get_queue('ejudge_listener')
-    q.enqueue('ejudge_listener.tasks.send_to_front', ej_request)
+    request_args, _ = ej_request_schema.load(request.args)
+    json_args, _ = ej_request_schema.dump(request_args)
+    isterminal = request_args.status in run.TERMINAL_STATUSES
+    if isterminal:
+        send_terminal_chain.delay(json_args)
+    else:
+        send_non_terminal.delay(json_args)
     return jsonify({})

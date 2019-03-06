@@ -14,9 +14,9 @@ flask = "*"
 flask-sqlalchemy = "*"
 pymysql = "*"
 requests = "*"
-webargs = "*"
 flask-pymongo = "*"
-celery = {extras = ["redis"],version = "*"}
+celery = {version = "*",extras = ["redis"]}
+marshmallow = "*"
 
 [requires]
 python_version = "3.6"

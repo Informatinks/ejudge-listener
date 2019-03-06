@@ -1,8 +1,6 @@
 import random
 from unittest.mock import patch
-
 from flask import url_for
-
 from tests.unit.base import TestCase
 
 MIN_ID = 1
@@ -13,42 +11,44 @@ def random_id():
     return random.randint(MIN_ID, MAX_ID)
 
 
-@patch('rq.queue.Queue.enqueue')
 class TestView(TestCase):
-    valid_int_request = {
+    valid_terminal_int_request = {
         'contest_id': random_id(),
         'run_id': random_id(),
         'new_status': 0,
     }
 
-    valid_str_request = {
+    valid_terminal_str_request = {
         'contest_id': str(random_id()),
         'run_id': str(random_id()),
         'new_status': 0,
     }
 
-    invalid_ids = ['', 'one', 'dog', True, False, None]  # All possible
-    invalid_requests = [{'contest_id': i_id, 'run_id': i_id} for i_id in invalid_ids]
+    valid_non_terminal_int_request = {
+        'contest_id': random_id(),
+        'run_id': random_id(),
+        'new_status': 98,
+    }
 
-    def assert400(self, response, message=None):
-        self.assertStatus(response, 400, message)
+    valid_non_terminal_str_request = {
+        'contest_id': str(random_id()),
+        'run_id': str(random_id()),
+        'new_status': 98,
+    }
 
     def send_request(self, params):
         return self.client.get(url_for('update_run', **params))
 
-    def send_6_invalid_requests(self):
-        return [self.send_request(request) for request in self.invalid_requests]
-
     # -------------------------------------------------------------------------
 
-    def test_valid_request(self, mock_enqueue):
-        self.assert200(self.send_request(self.valid_int_request))
-        self.assert200(self.send_request(self.valid_str_request))
-        self.assertEqual(mock_enqueue.call_count, 2)
+    @patch('ejudge_listener.views.send_terminal_chain.delay')
+    def test_terminal(self, mock_terminal_delay):
+        self.assert200(self.send_request(self.valid_terminal_int_request))
+        self.assert200(self.send_request(self.valid_terminal_str_request))
+        self.assertEqual(mock_terminal_delay.call_count, 2)
 
-    def test_invalid_request(self, mock_enqueue):
-        responses = self.send_6_invalid_requests()
-        for response in responses:
-            with self.subTest():
-                self.assert400(response)
-        mock_enqueue.assert_not_called()
+    @patch('ejudge_listener.views.send_non_terminal.delay')
+    def test_non_terminal(self, mock_non_terminal_delay):
+        self.assert200(self.send_request(self.valid_non_terminal_int_request))
+        self.assert200(self.send_request(self.valid_non_terminal_str_request))
+        self.assertEqual(mock_non_terminal_delay.call_count, 2)

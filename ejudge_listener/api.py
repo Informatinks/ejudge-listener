@@ -1,7 +1,18 @@
-from flask import Flask, current_app
+from flask import jsonify as flask_jsonify, current_app, Flask
 from werkzeug.exceptions import HTTPException
 
-from ejudge_listener.utils import jsonify
+
+def jsonify(data, status_code=200):
+    response = {'status_code': status_code}
+    if status_code in (200, 201):
+        response['data'] = data
+        response['status'] = 'success'
+    else:
+        response['error'] = data
+        response['status'] = 'error'
+
+    return flask_jsonify(response), status_code
+
 
 DEFAULT_MESSAGE = (
     'Oops! An error happened. We are already ' 'trying to resolve the problem!'

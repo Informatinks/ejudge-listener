@@ -2,7 +2,7 @@ click==7.0
 coverage==4.5.2
 flask-testing==0.7.1
 flask==1.0.2
-isort==4.3.9
+isort==4.3.11
 itsdangerous==1.1.0
 jinja2==2.10
 markupsafe==1.1.1
