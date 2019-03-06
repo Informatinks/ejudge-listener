@@ -2,11 +2,7 @@ import codecs
 import gzip
 import os
 
-CONTEST_PATH = '/home/judges/contests_var'  # TODO: какой путь на самом деле?
-PROTOCOLS_PATH = 'archive/xmlreports'  # TODO: какой путь на самом деле?
-AUDIT_PATH = 'archive/audit'
-SOURCES_PATH = 'archive/runs'
-OUTPUT_PATH = 'archive/output'
+from flask import current_app
 
 
 def read_file_unknown_encoding(file_name, size=255):
@@ -198,7 +194,7 @@ def submit_path(tp, contest_id, submit_id):
     # path to archive file with path to archive directory = tp,
     # look up AUDIT_PATH etc constants
     return os.path.join(
-        CONTEST_PATH,
+        current_app.config['CONTEST_PATH'],
         '0' * (6 - len(str(contest_id))) + str(contest_id),
         tp,
         to32(submit_id // 32 // 32 // 32 % 32),
