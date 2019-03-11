@@ -1,25 +1,21 @@
 import os
 import xml
+import xml.dom.minidom
 import zipfile
 
-from .protocol.exceptions import AuditNotFoundError
-from .extensions import db
-from .protocol.ejudge_archive import EjudgeArchiveReader
-from .protocol.run import (
-    read_file_unknown_encoding,
-    to32,
 from flask import current_app
 
-from ejudge_listener.exceptions import AuditNotFoundError
-from ejudge_listener.models import db
-from ejudge_listener.protocol.ejudge_archive import EjudgeArchiveReader
-from ejudge_listener.protocol.run import (
+from .extensions import db
+from .protocol.ejudge_archive import EjudgeArchiveReader
+from .protocol.exceptions import AuditNotFoundError
+from .protocol.run import (
     safe_open,
     submit_path,
     to32,
     get_string_status,
     get_protocol_from_file,
-)
+    read_file_unknown_encoding)
+
 from .rmatics.ejudge.serve_internal import EjudgeContestCfg
 from .rmatics.utils.json_type import JsonType
 
@@ -76,8 +72,10 @@ class EjudgeProblem(Problem):
     __mapper_args__ = {'polymorphic_identity': 'ejudgeproblem'}
 
     ejudge_prid = db.Column('id', db.Integer, primary_key=True)  # global id in ejudge
-    contest_id = db.Column(db.Integer, primary_key=True, nullable=False, autoincrement=False)
-    ejudge_contest_id = db.Column(db.Integer, primary_key=True, nullable=False, autoincrement=False)
+    contest_id = db.Column(db.Integer, primary_key=True, nullable=False,
+                           autoincrement=False)
+    ejudge_contest_id = db.Column(db.Integer, primary_key=True, nullable=False,
+                                  autoincrement=False)
     secondary_ejudge_contest_id = db.Column(db.Integer, nullable=True)
     problem_id = db.Column(db.Integer, primary_key=True, nullable=False,
                            autoincrement=False)  # id in contest
