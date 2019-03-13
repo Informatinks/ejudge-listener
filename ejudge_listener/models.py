@@ -5,16 +5,17 @@ import zipfile
 
 from flask import current_app
 
-from .extensions import db
-from .protocol.ejudge_archive import EjudgeArchiveReader
-from .protocol.exceptions import AuditNotFoundError
-from .protocol.run import (
+from ejudge_listener.extensions import db
+from ejudge_listener.protocol.ejudge_archive import EjudgeArchiveReader
+from ejudge_listener.protocol.exceptions import AuditNotFoundError
+from ejudge_listener.protocol.run import (
     safe_open,
     submit_path,
     to32,
     get_string_status,
     get_protocol_from_file,
-    read_file_unknown_encoding)
+    read_file_unknown_encoding
+)
 
 from .rmatics.ejudge.serve_internal import EjudgeContestCfg
 from .rmatics.utils.json_type import JsonType

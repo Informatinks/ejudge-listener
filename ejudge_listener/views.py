@@ -1,9 +1,14 @@
 from flask import request
 
 from ejudge_listener.flow import EjudgeRequestSchema
-from .protocol import run
-from .api import jsonify
-from .tasks import send_non_terminal, load_protocol, insert_to_mongo, send_terminal
+from ejudge_listener.protocol import run
+from ejudge_listener.api import jsonify
+from ejudge_listener.tasks import (
+    send_non_terminal,
+    load_protocol,
+    insert_to_mongo,
+    send_terminal,
+)
 
 send_terminal_chain = load_protocol.s() | insert_to_mongo.s() | send_terminal.s()
 

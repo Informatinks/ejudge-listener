@@ -5,6 +5,33 @@ from ejudge_listener.extensions import db
 from ejudge_listener.models import EjudgeRun
 from unittest.mock import patch
 
+REQUEST_ARGS = {'contest_id': 1, 'run_id': 10, 'status': 0}
+MONGO_ID = '507f1f77bcf86cd799439011'
+RUN = {
+    'run_id': 10,
+    'contest_id': 1,
+    'status': None,
+    'lang_id': None,
+    'score': None,
+    'last_change_time': None,
+    'create_time': None,
+    'run_uuid': None,
+    'test_num': None,
+}
+RUN_WITH_MONGO_ID = {
+    'run_id': 10,
+    'contest_id': 1,
+    'status': None,
+    'lang_id': None,
+    'score': None,
+    'last_change_time': None,
+    'create_time': None,
+    'run_uuid': None,
+    'test_num': None,
+    'mongo_protocol_id': MONGO_ID,
+}
+PROTOCOL = {'tests': 'nice_tests', 'audit': 'nice_audit'}
+
 
 class TestCase(flask_testing.TestCase):
     def create_app(self):

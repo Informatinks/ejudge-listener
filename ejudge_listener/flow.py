@@ -1,13 +1,14 @@
-from typing import NamedTuple, Tuple
+from typing import NamedTuple, Tuple, Type
 
 import requests
 from bson import ObjectId
 from flask import current_app
 from marshmallow import fields, Schema, post_load
+from requests import RequestException
 
-from .models import EjudgeRun
-from .extensions import mongo, db
-from .protocol.protocol import read_protocol
+from ejudge_listener.models import EjudgeRun
+from ejudge_listener.extensions import mongo, db
+from ejudge_listener.protocol.protocol import read_protocol
 
 REQUEST_TIMEOUT = 5  # seconds
 
@@ -95,5 +96,16 @@ def mongo_rollback(data: dict) -> None:
     mongo.db.protocol.delete_one({'_id', ObjectId(mongo_id)})
 
 
-def is_4xx_error(status_code) -> bool:
+def is_4xx_code(status_code) -> bool:
     return 400 <= status_code < 500
+
+
+def is_4xx_error(e: RequestException) -> bool:
+    try:
+        status_code = e.response.status_code
+    except AttributeError:
+        return False
+    else:
+        if is_4xx_code(status_code):
+            return True
+        return False

@@ -3,11 +3,10 @@ from logging.config import dictConfig
 from flask import Flask
 
 import cli
-from .api import register_error_handlers
-from .routes import setup_routes
-from .extensions import celery, mongo
-from .extensions import db
-# from .routes import setup_routes
+from ejudge_listener.views import update_run
+from ejudge_listener.api import register_error_handlers
+from ejudge_listener.extensions import celery, mongo
+from ejudge_listener.extensions import db
 
 
 def create_app():
@@ -24,33 +23,30 @@ def create_app():
 
 
 def init_logger():
-    dictConfig({
-        'version': 1,
-        'formatters': {
-            'default': {
-                'format': '[%(asctime)s] %(levelname)s in %(module)s: %(message)s',
+    dictConfig(
+        {
+            'version': 1,
+            'formatters': {
+                'default': {
+                    'format': '[%(asctime)s] %(levelname)s in %(module)s: %(message)s'
+                }
             },
-        },
-        'handlers': {
-            'stdout': {
-                'class': 'logging.StreamHandler',
-                'formatter': 'default',
-                'stream': 'ext://sys.stdout',
+            'handlers': {
+                'stdout': {
+                    'class': 'logging.StreamHandler',
+                    'formatter': 'default',
+                    'stream': 'ext://sys.stdout',
+                }
             },
-        },
-        'root': {
-            'level': 'INFO',
-            'handlers': ['stdout'],
+            'root': {'level': 'INFO', 'handlers': ['stdout']},
         }
-    })
+    )
 
 
 def configure_celery_app(app, celery):
     """Configures the celery app."""
     celery.conf.update(app.config)
-    celery.conf['imports'] = [
-        'ejudge_listener.tasks'
-    ]
+    celery.conf['imports'] = ['ejudge_listener.tasks']
 
     # noinspection PyPep8Naming
     TaskBase = celery.Task
@@ -61,3 +57,7 @@ def configure_celery_app(app, celery):
                 return TaskBase.__call__(self, *args, **kwargs)
 
     celery.Task = ContextTask
+
+
+def setup_routes(app):
+    app.add_url_rule('/notification/update_run', view_func=update_run)
