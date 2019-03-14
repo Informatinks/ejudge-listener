@@ -28,7 +28,7 @@ CELERYD_OPTS="--time-limit=300 --concurrency=4"
 # - %I will be replaced with the current child process index
 CELERYD_PID_FILE="/var/run/celery/%n.pid"
 CELERYD_LOG_FILE="/var/log/celery/%n%I.log"
-CELERYD_LOG_LEVEL="INFO"
+CELERYD_LOG_LEVEL="DEBUG"
 ```
 
 - Add systemd unit file:
@@ -58,5 +58,3 @@ ExecReload=/bin/sh -c '${CELERY_BIN} multi restart ${CELERYD_NODES} \
 [Install]
 WantedBy=multi-user.target
 ```
-
-# Testing
