@@ -45,8 +45,6 @@ def init_logger():
 
 def configure_celery_app(app, celery):
     """Configures the celery app."""
-    celery.conf.update(app.config)
-    celery.conf['imports'] = ['ejudge_listener.tasks']
 
     # noinspection PyPep8Naming
     TaskBase = celery.Task

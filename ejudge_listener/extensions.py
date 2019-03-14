@@ -4,9 +4,5 @@ from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
 mongo = PyMongo()
-celery = Celery(
-    "ejudge-listener",
-    broker='redis://@localhost:6379/0',
-    backend='redis://@localhost:6379/0',
-)
-# celery = Celery()
+celery = Celery("ejudge-listener")
+celery.config_from_object('celeryconfig')

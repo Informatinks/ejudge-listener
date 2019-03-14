@@ -1,5 +1,3 @@
-from contextlib import suppress
-
 from celery import shared_task
 from celery.utils.log import get_task_logger
 from requests import RequestException
@@ -16,10 +14,11 @@ logger = get_task_logger(__name__)
 def send_non_terminal(request_args):
     """Send non terminal status to ejudge front.
 
-    We ignore result and not retry, because we get new status from ejudge earlier, then
-    requeued task starts execute. And we just don't care about non terminal statuses,
-    because main logic around terminal statuses and we can afford to not send
-    some of non terminal statuses to ejudge front.
+    We ignore result and not retry, because we get new status
+    from ejudge earlier, then requeued task starts execute.
+    And we just don't care about non terminal statuses, because
+    main logic around terminal statuses and we can afford to not
+    send or loose some of non terminal statuses to ejudge front.
     """
     flow.send_non_terminal(request_args)
 
@@ -32,10 +31,8 @@ def load_protocol(self, request_args):
     try:
         return flow.load_protocol(request_args)
     except NoResultFound:
-        # TODO: Should we inherit celery.Task here and create method stop_chain()?
-        self.request.chain = None  # stop chain
+        self.request.chain = None  # Stop chain
         msg = f'Unexpected error. Run not found. Request args={request_args}'
-        # TODO: Should we raise Ignore or Reject here for auto logging?
         logger.exception(msg)
     except ProtocolNotFoundError as exc:
         raise self.retry(exc=exc, countdown=2)
@@ -49,7 +46,7 @@ def insert_to_mongo(run_data):
     return flow.insert_to_mongo(run_data)
 
 
-@shared_task(bind=True, max_retries=None, retry_backoff=True, default_retry_delay=60)
+@shared_task(bind=True, max_retries=None, retry_backoff=True)
 def send_terminal(self, data):
     """Send Ejudge run data and mongo id of protocol."""
     try:
@@ -61,6 +58,3 @@ def send_terminal(self, data):
             logger.exception(msg)
         else:
             self.retry(exc=exc, countdown=2)
-
-
-
