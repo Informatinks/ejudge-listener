@@ -15,28 +15,6 @@ def read_file_unknown_encoding(file_name, size=255):
     return res
 
 
-def lazy(func):
-    """
-    A decorator function designed to wrap attributes that need to be
-    generated, but will not change. This is useful if the attribute is
-    used a lot, but also often never used, as it gives us speed in both
-    situations.
-    """
-
-    def cached(self, *args):
-        name = "_" + func.__name__
-        try:
-            return getattr(self, name)
-        except AttributeError as e:
-            pass
-
-        value = func(self, *args)
-        setattr(self, name, value)
-        return value
-
-    return cached
-
-
 def get_protocol_from_file(filename):
     if os.path.isfile(filename):
         myopen = open
@@ -97,97 +75,6 @@ def get_string_status(s):
         "WT": "Превышено максимальное общее время работы",
         "SK": "Пропущено",
     }[s]
-
-
-def get_lang_ext_by_id(lang_id):
-    langs = {
-        1: ".pas",
-        2: ".c",
-        3: ".cpp",
-        8: ".dpr",
-        23: ".py",
-        24: ".pl",
-        18: ".java",
-        25: ".cs",
-        26: ".rb",
-        22: ".php",
-        27: ".py",
-        28: ".hs",
-        30: ".pas",
-        29: ".bas",
-        31: ".1c",
-    }
-    return langs.get(lang_id, str())
-
-
-def get_lag_exts():
-    return [
-        ".pas",
-        ".c",
-        ".cpp",
-        ".dpr",
-        ".py",
-        ".pl",
-        ".java",
-        ".cs",
-        ".rb",
-        ".php",
-        ".py",
-        ".hs",
-        ".pas",
-        ".bas",
-        ".1c",
-    ]
-
-
-def get_lang_name_by_id(lang_id):
-    lang_names = {
-        1: "Free Pascal 2.6.2",
-        2: "GNU C 4.9",
-        3: "GNU C++ 4.9",
-        7: "Turbo Pascal",
-        8: "Borland Delphi 6 - 14.5",
-        9: "Borland C",
-        10: "Borland C++",
-        18: "Java JDK 1.7",
-        22: "PHP 5.2.17",
-        23: "Python 2.7",
-        24: "Perl 5.10.1",
-        25: "Mono C# 2.10.8.0",
-        26: "Ruby 1.8.7",
-        27: "Python 3.3",
-        28: "Haskell GHC 7.4.2",
-        29: "FreeBASIC 1.00.0",
-        30: "PascalABC 1.8.0.496",
-        31: "1C 8.3",
-    }
-    return lang_names.get(lang_id, str())
-
-
-def get_status_by_id(status_id):
-    return {
-        0: "OK",
-        1: "CE",
-        2: "RE",
-        3: "TL",
-        4: "PE",
-        5: "WA",
-        6: "CF",
-        7: "Partial",
-        8: "AC",
-        9: "Ignored",
-        10: "Disqualified",
-        11: "Pending",
-        12: "ML",
-        13: "Security error",
-        14: "Style Violation",
-        15: "Wall Time Limit Exceeded",
-        16: "Pending Review",
-        17: "Rejected",
-        18: "Skipped",
-        96: "Running...",
-        98: "Compiling...",
-    }[status_id]
 
 
 def submit_path(tp, contest_id, submit_id):
