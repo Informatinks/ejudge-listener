@@ -1,10 +1,11 @@
-from typing import NamedTuple, Tuple, Type
+from typing import NamedTuple, Tuple
 
 import requests
 from bson import ObjectId
 from flask import current_app
 from marshmallow import fields, Schema, post_load
 from requests import RequestException
+from sqlalchemy.orm import joinedload
 
 from ejudge_listener.models import EjudgeRun
 from ejudge_listener.extensions import mongo, db
@@ -59,6 +60,7 @@ def load_protocol(request_args: dict) -> Tuple[dict, dict]:
     run = (
         db.session.query(EjudgeRun)
         .filter_by(contest_id=r.contest_id, run_id=r.run_id)
+        .options(joinedload(EjudgeRun.problem))
         .one()
     )
     protocol = read_protocol(run)
