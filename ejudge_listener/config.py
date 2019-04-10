@@ -81,7 +81,7 @@ class BaseConfig:
     SOURCES_PATH = os.getenv('SOURCES_PATH', 'archive/runs')
     OUTPUT_PATH = os.getenv('OUTPUT_PATH', 'archive/output')
 
-    # Celery requires lowercased-condig
+    # Celery requires lowercased config
     broker_url = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/0')
     task_ignore_result = bool_(os.getenv('CELERY_TASK_IGNORE_RESULT', True))
     worker_max_memory_per_child = 250_000  # 250MB
