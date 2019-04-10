@@ -7,18 +7,26 @@ from ejudge_listener.views import update_run
 from ejudge_listener.api import register_error_handlers
 from ejudge_listener.extensions import celery, mongo
 from ejudge_listener.extensions import db
+from ejudge_listener.config import CONFIG_MODULE
 
-
-def create_app():
+def create_app(config):
     init_logger()
+
     app = Flask(__name__)
-    app.config.from_pyfile('../configs/production.cfg', silent=True)
+
+    app.config.from_object(config)
+    app.url_map.strict_slashes = False
+    app.logger.info(f'Running with {config} module')
+
     db.init_app(app)
     mongo.init_app(app)
     configure_celery_app(app, celery)
+
     register_error_handlers(app)
+
     app.cli.add_command(cli.test)
     setup_routes(app)
+
     return app
 
 
