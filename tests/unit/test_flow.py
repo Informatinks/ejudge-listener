@@ -20,8 +20,6 @@ class TestLoadProtocol(TestCase):
         super().setUp()
         self.create_runs()
 
-    # -------------------------------------------------------------------------
-
     def test_db_doesnt_contain_run(self):
         ej_request = EjudgeRequest(7777, 5555, 0)  # non existing run
         request_args = ej_request_schema.dump(ej_request).data

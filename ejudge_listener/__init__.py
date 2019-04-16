@@ -3,10 +3,10 @@ from logging.config import dictConfig
 from flask import Flask
 
 import cli
-from ejudge_listener.views import update_run
 from ejudge_listener.api import register_error_handlers
 from ejudge_listener.extensions import celery, mongo
 from ejudge_listener.extensions import db
+from ejudge_listener.views import update_run
 
 
 def create_app():

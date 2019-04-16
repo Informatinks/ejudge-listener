@@ -25,36 +25,35 @@ def send_non_terminal(request_args):
 
 @shared_task(bind=True, retry_backoff=True)
 def load_protocol(self, request_args):
-    """
-    Load Ejudge run from database and load protocol from filesystem for this run.
+    """ Load Ejudge run from database and load protocol from filesystem for this run.
     """
     try:
         return flow.load_protocol(request_args)
     except NoResultFound:
+        logger.exception(f'Run not found. Request args={request_args}')
         self.request.chain = None  # Stop chain
-        msg = f'Unexpected error. Run not found. Request args={request_args}'
-        logger.exception(msg)
     except ProtocolNotFoundError as exc:
+        logger.exception(f'Protocol not found. Retrying task. Request args={request_args}')
         raise self.retry(exc=exc, countdown=2)
 
 
 @shared_task
 def insert_to_mongo(run_data):
-    """
-    Insert to mongo protocol, return Ejudge run data with mongo id of new protocol.
+    """ Insert to mongo protocol, return Ejudge run data with mongo id of new protocol.
     """
     return flow.insert_to_mongo(run_data)
 
 
 @shared_task(bind=True, max_retries=None, retry_backoff=True)
 def send_terminal(self, data):
-    """Send Ejudge run data and mongo id of protocol."""
+    """Send Ejudge run data and mongo id of protocol.
+    """
     try:
         flow.send_terminal(data)
     except RequestException as exc:
         if is_4xx_error(exc):
+            logger.exception('Received status 4xx from ejudge. Rollback mongo')
             mongo_rollback(data)
-            msg = 'Unexpected error. Status 4xx from ejudge front. Rollback mongo'
-            logger.exception(msg)
         else:
+            logger.exception('Got unexpected errror while request to ejudge. Retrying task')
             self.retry(exc=exc, countdown=2)
