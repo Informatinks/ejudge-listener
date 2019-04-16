@@ -10,7 +10,7 @@ from ejudge_listener.views import update_run
 from ejudge_listener.config import CONFIG_MODULE
 
 
-def create_app():
+def create_app(config):
     init_logger()
 
     app = Flask(__name__)
@@ -55,7 +55,7 @@ def init_logger():
 def configure_celery_app(app, celery):
     """Configures the celery app."""
     celery.conf.update(app.config)
-    # noinspection PyPep8Naming
+
     TaskBase = celery.Task
 
     class ContextTask(TaskBase):
