@@ -35,7 +35,7 @@ PROTOCOL = {'tests': 'nice_tests', 'audit': 'nice_audit'}
 
 class TestCase(flask_testing.TestCase):
     def create_app(self):
-        app = create_app()
+        app = create_app('ejudge_listener.config.TestConfig')
         return app
 
     def create_runs(self):
