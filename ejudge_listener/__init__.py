@@ -4,14 +4,17 @@ from flask import Flask
 
 import cli
 from ejudge_listener.api import register_error_handlers
+from ejudge_listener.config import CONFIG_MODULE
 from ejudge_listener.extensions import celery, mongo
 from ejudge_listener.extensions import db
 from ejudge_listener.views import update_run
-from ejudge_listener.config import CONFIG_MODULE
 
 
-def create_app(config):
-    init_logger()
+def create_app(config, config_logger=True):
+    # Optional looger setup to prevent overriding
+    # child applications own loggers
+    if config_logger is True:
+        init_logger()
 
     app = Flask(__name__)
 
@@ -47,15 +50,15 @@ def init_logger():
                     'stream': 'ext://sys.stdout',
                 }
             },
-            'root': {'level': 'INFO', 'handlers': ['stdout']},
+            '': {'level': 'INFO', 'handlers': ['stdout']},
         }
     )
 
 
 def configure_celery_app(app, celery):
-    """Configures the celery app."""
+    """Configures the celery app.
+    """
     celery.conf.update(app.config)
-
     TaskBase = celery.Task
 
     class ContextTask(TaskBase):

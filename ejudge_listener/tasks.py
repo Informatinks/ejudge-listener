@@ -33,7 +33,7 @@ def load_protocol(self, request_args):
         logger.exception(f'Run not found. Request args={request_args}')
         self.request.chain = None  # Stop chain
     except ProtocolNotFoundError as exc:
-        logger.exception(f'Protocol not found. Retrying task. Request args={request_args}')
+        logger.warning(f'Protocol not found. Retrying task. Request args={request_args}')
         raise self.retry(exc=exc, countdown=2)
 
 

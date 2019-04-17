@@ -90,10 +90,13 @@ class BaseConfig:
         'fanout_patterns': True,
         'visibility_timeout': 24 * 60 * 60,  # 24 hours
     }
+    worker_hijack_root_logger = False
+
 
 
 class DevConfig(BaseConfig):
     ...
+    SQLALCHEMY_ECHO = False
 
 
 class TestConfig(BaseConfig):

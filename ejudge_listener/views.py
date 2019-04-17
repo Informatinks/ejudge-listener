@@ -1,8 +1,8 @@
 from flask import request
 
+from ejudge_listener.api import jsonify
 from ejudge_listener.flow import EjudgeRequestSchema
 from ejudge_listener.protocol import run
-from ejudge_listener.api import jsonify
 from ejudge_listener.tasks import (
     send_non_terminal,
     load_protocol,
@@ -11,6 +11,7 @@ from ejudge_listener.tasks import (
 )
 
 send_terminal_chain = load_protocol.s() | insert_to_mongo.s() | send_terminal.s()
+send_non_terminal_chain = send_non_terminal.s()
 
 ej_request_schema = EjudgeRequestSchema()
 
@@ -22,5 +23,5 @@ def update_run():
     if isterminal:
         send_terminal_chain.delay(json_args)
     else:
-        send_non_terminal.delay(json_args)
+        send_non_terminal_chain.delay(json_args)
     return jsonify({})
