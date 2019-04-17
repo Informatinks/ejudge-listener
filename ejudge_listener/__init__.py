@@ -11,7 +11,7 @@ from ejudge_listener.views import update_run
 
 
 def create_app(config, config_logger=True):
-    # Optional looger setup to prevent overriding
+    # Optional logger setup to prevent overriding
     # child applications own loggers
     if config_logger is True:
         init_logger()
