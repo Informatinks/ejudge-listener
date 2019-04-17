@@ -30,7 +30,7 @@ def load_protocol(self, request_args):
     try:
         return flow.load_protocol(request_args)
     except NoResultFound:
-        logger.exception(f'Run not found. Request args={request_args}')
+        logger.error(f'Run not found. Request args={request_args}')
         self.request.chain = None  # Stop chain
     except ProtocolNotFoundError as exc:
         logger.warning(f'Protocol not found. Retrying task. Request args={request_args}')
@@ -52,7 +52,7 @@ def send_terminal(self, data):
         flow.send_terminal(data)
     except RequestException as exc:
         if is_4xx_error(exc):
-            logger.exception('Received status 4xx from ejudge. Rollback mongo')
+            logger.error('Received status 4xx from ejudge. Rollback mongo')
             mongo_rollback(data)
         else:
             logger.exception('Got unexpected errror while request to ejudge. Retrying task')
