@@ -1,7 +1,7 @@
 from collections import OrderedDict
 
-from ejudge_listener.exceptions import ProtocolNotFoundError
-from ejudge_listener.models.ejudge_run import EjudgeRun
+from ejudge_listener.protocol.exceptions import ProtocolNotFoundError
+from ejudge_listener.models import EjudgeRun
 
 
 def read_protocol(run: EjudgeRun) -> dict:

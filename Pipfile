@@ -5,19 +5,16 @@ verify_ssl = true
 
 [dev-packages]
 flask-testing = "*"
-isort = "*"
 teamcity-messages = "*"
-coverage = "*"
 
 [packages]
 flask = "*"
 flask-sqlalchemy = "*"
 pymysql = "*"
 requests = "*"
-rq = "*"
-webargs = "*"
-flask-rq2 = "*"
 flask-pymongo = "*"
+celery = {version = "*",extras = ["redis"]}
+marshmallow = "*"
 
 [requires]
 python_version = "3.6"
