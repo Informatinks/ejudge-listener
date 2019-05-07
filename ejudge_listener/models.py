@@ -137,19 +137,28 @@ class EjudgeProblem(Problem):
         Возвращает словарь с полной информацией о тесте
         """
         test = {}
-        if self.get_test_size(int(test_num)) <= 255:
-            test["input"] = self.get_test(int(test_num), size=size)
+        try:
+            if self.get_test_size(int(test_num)) <= 255:
+                test["input"] = self.get_test(int(test_num), size=size)
+                test["big_input"] = False
+            else:
+                test["input"] = self.get_test(int(test_num), size=size) + "...\n"
+                test["big_input"] = True
+        except:
+            test["input"] = ''
             test["big_input"] = False
-        else:
-            test["input"] = self.get_test(int(test_num), size=size) + "...\n"
-            test["big_input"] = True
 
-        if self.get_corr_size(int(test_num)) <= 255:
-            test["corr"] = self.get_corr(int(test_num), size=size)
+        try:
+            if self.get_corr_size(int(test_num)) <= 255:
+                test["corr"] = self.get_corr(int(test_num), size=size)
+                test["big_corr"] = False
+            else:
+                test["corr"] = self.get_corr(int(test_num), size=size) + "...\n"
+                test["big_corr"] = True
+        except:
+            test["corr"] = ''
             test["big_corr"] = False
-        else:
-            test["corr"] = self.get_corr(int(test_num), size=size) + "...\n"
-            test["big_corr"] = True
+
         return test
 
     def get_corr_size(self, test_num):
