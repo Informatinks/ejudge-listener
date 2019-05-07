@@ -95,7 +95,7 @@ def insert_protocol_to_mongo(protocol: dict) -> str:
 
 def mongo_rollback(data: dict) -> None:
     mongo_id = data['mongo_protocol_id']
-    mongo.db.protocol.delete_one({'_id', ObjectId(mongo_id)})
+    mongo.db.protocol.delete_one({'_id': ObjectId(mongo_id)})
 
 
 def is_4xx_code(status_code) -> bool:

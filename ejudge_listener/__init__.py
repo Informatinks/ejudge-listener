@@ -64,7 +64,10 @@ def configure_celery_app(app, celery):
     class ContextTask(TaskBase):
         def __call__(self, *args, **kwargs):
             with app.app_context():
-                return TaskBase.__call__(self, *args, **kwargs)
+                try:
+                    return TaskBase.__call__(self, *args, **kwargs)
+                finally:
+                    db.session.rollback()
 
     celery.Task = ContextTask
 

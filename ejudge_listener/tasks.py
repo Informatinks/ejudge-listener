@@ -23,7 +23,7 @@ def send_non_terminal(request_args):
     flow.send_non_terminal(request_args)
 
 
-@shared_task(bind=True, retry_backoff=True)
+@shared_task(bind=True, default_retry_delay=2, retry_backoff=True)
 def load_protocol(self, request_args):
     """ Load Ejudge run from database and load protocol from filesystem for this run.
     """
@@ -34,7 +34,7 @@ def load_protocol(self, request_args):
         self.request.chain = None  # Stop chain
     except ProtocolNotFoundError as exc:
         logger.warning(f'Protocol not found. Retrying task. Request args={request_args}')
-        raise self.retry(exc=exc, countdown=2)
+        raise self.retry(exc=exc)
 
 
 @shared_task
