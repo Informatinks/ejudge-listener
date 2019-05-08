@@ -1,0 +1,125 @@
+---
+- name: Prepare source code archive
+  hosts: localhost
+  vars:
+    project: ejudge-listener
+    user: ejudge-listener
+    group: uwsgi
+  tasks:
+    - set_fact:
+        app_dir="{{ playbook_dir | dirname }}"
+
+    - name: Compress source code to .gz archive
+      archive:
+        path: "{{ app_dir }}"
+        dest: "{{ app_dir }}/{{ project }}.tgz"
+
+
+- name: Deliver code to target server
+  hosts: "{{ target_server }}"
+  vars:
+    project: ejudge-listener
+  tasks:
+    - set_fact:
+        app_dir="{{ playbook_dir | dirname }}"
+
+    - name: Push code via copy
+      copy:
+        src: "{{ app_dir }}/{{ project }}.tgz"
+        dest: "/home/teamcity/"
+
+- name: Delete source code
+  hosts: localhost
+  vars:
+    project: ejudge-listener
+  tasks:
+    - set_fact:
+        app_dir="{{ playbook_dir | dirname }}"
+
+    - name: Delete source code
+      file:
+        path: "{{ app_dir }}/{{ project }}.tgz"
+        state: absent
+
+- name: Deploy new source code
+  hosts: "{{ target_server }}"
+  vars:
+    project: ejudge-listener
+    user: ejudge-listener
+    group: uwsgi
+  tasks:
+    - name: Check if source code for for requested project exists
+      stat:
+        path: /home/teamcity/{{ project }}.tgz
+      register: new_build
+
+    - name: Backup current code
+      block:
+        - name: Creates common backup directory if not exists
+          file:
+            path: /usr/src/backups
+            state: directory
+        - name: Creates project backup directory if not exists
+          file:
+            path: /usr/src/backups/{{ project }}
+            state: directory
+        - name: Build date for current code archive
+          command: date +"%d-%m-%Y_%H-%M-%S"
+          register: backup_timestamp
+        - name: Tar current code
+          archive:
+            path: "/usr/src/{{ project }}"
+            dest: "/usr/src/backups/{{ project }}/{{ project }}_{{ backup_timestamp.stdout }}.tgz"
+      when: new_build.stat.exists == True
+
+    - name: Stop systemd unit
+      systemd:
+        name: "{{ project }}"
+        state: stopped
+
+    - name: Remove old code
+      file:
+        path: /usr/src/{{ project }}
+        state: absent
+
+    - name: Create directory for new code
+      file:
+        path: /usr/src/{{ project }}
+        state: directory
+
+    - name: Unpack new code
+      unarchive:
+        src: /home/teamcity/{{ project }}.tgz
+        dest: /usr/src/{{ project }}
+        remote_src: yes
+        extra_opts: [--strip-components=1] # strip tar parent dir
+
+    - name: Ensure group 'uwsgi' exists
+      group:
+        name: uwsgi
+        state: present
+
+    - name: Ensure user '{{ project }}' with primary group of '{{ user }}' exists
+      user:
+        name: "{{ user }}"
+        comment: "{{ project }} app-scecific user ({{ user }})"
+        group: "{{ group }}"
+
+    - name: Set source code dir permissions
+      file:
+        path: "/usr/src/{{ project }}"
+        owner: "{{ user }}"
+        group: "{{ group }}"
+        # when specifying mode using octal numbers, add a leading 0
+        mode: 0755
+        recurse: yes
+
+    - name: Start systemd unit
+      systemd:
+        name: "{{ project }}"
+        state: started
+
+    - name: Restart celery unit
+      systemd:
+        name: "ejudge-listener-celery"
+        state: restarted
