@@ -84,6 +84,9 @@ class BaseConfig:
     # Celery requires lowercased config
     broker_url = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/0')
     task_ignore_result = bool_(os.getenv('CELERY_TASK_IGNORE_RESULT', True))
+    imports = (
+        'ejudge_listener.tasks'
+    )
     worker_max_memory_per_child = 250_000  # 250MB
     broker_transport_options = {
         'fanout_prefix': True,
@@ -91,7 +94,6 @@ class BaseConfig:
         'visibility_timeout': 24 * 60 * 60,  # 24 hours
     }
     worker_hijack_root_logger = False
-
 
 
 class DevConfig(BaseConfig):

@@ -1,3 +1,5 @@
+import copy
+
 import flask_testing
 
 from ejudge_listener import create_app
@@ -55,6 +57,7 @@ class TestCase(flask_testing.TestCase):
     def setUp(self):
         db.drop_all()
         db.create_all()
+        self.run_data = copy.deepcopy(RUN)
         self.addCleanup(patch.stopall)
 
     def tearDown(self):

@@ -6,4 +6,3 @@ from ejudge_listener.config import CONFIG_MODULE
 # as it breaks celery task default logger
 # TODO: worker_hijack_root_logger or @after_setup_task_logger
 app = create_app(CONFIG_MODULE, config_logger=False)
-app.app_context().push()

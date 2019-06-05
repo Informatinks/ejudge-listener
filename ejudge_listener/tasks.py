@@ -52,8 +52,8 @@ def send_terminal(self, data):
         flow.send_terminal(data)
     except RequestException as exc:
         if is_4xx_error(exc):
-            logger.error('Received status 4xx from ejudge. Rollback mongo')
+            logger.error('Received status 4xx from rmatics. Rollback mongo')
             mongo_rollback(data)
         else:
-            logger.exception('Got unexpected errror while request to ejudge. Retrying task')
+            logger.exception('Got unexpected error while request to rmatics. Retrying task')
             self.retry(exc=exc, countdown=2)
