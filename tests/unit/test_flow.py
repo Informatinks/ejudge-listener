@@ -27,14 +27,11 @@ class TestLoadProtocol(TestCase):
             load_protocol(request_args)
 
     @patch('ejudge_listener.flow.read_protocol', return_value=PROTOCOL)
-    @unittest.skip(
-        'Unknown import bug, RUN == RUN_WITH_MONGO_ID, can\'t assert correctly'
-    )
     def test_db_contain_run_and_ejudge_contain_protocol(self, mock_read_protocol):
         ej_request = EjudgeRequest(1, 10, 0)  # existing run
         request_args = ej_request_schema.dump(ej_request).data
         run_data, protocol = load_protocol(request_args)
-        self.assertEqual(run_data, RUN)
+        self.assertEqual(run_data, self.run_data)
         self.assertEqual(protocol, PROTOCOL)
 
     @patch('ejudge_listener.flow.read_protocol', side_effect=ProtocolNotFoundError)
@@ -48,5 +45,5 @@ class TestLoadProtocol(TestCase):
 class TestInsertToMongo(TestCase):
     @patch('ejudge_listener.flow.insert_protocol_to_mongo', return_value=MONGO_ID)
     def test_insert_to_mongo(self, mock_flow_insert_protocol_to_mongo):
-        run_data = insert_to_mongo((RUN, PROTOCOL))
+        run_data = insert_to_mongo((self.run_data, PROTOCOL))
         self.assertEqual(run_data, RUN_WITH_MONGO_ID)

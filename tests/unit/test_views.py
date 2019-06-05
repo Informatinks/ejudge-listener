@@ -41,13 +41,13 @@ class TestView(TestCase):
 
     # -------------------------------------------------------------------------
 
-    @patch('ejudge_listener.views.send_terminal_chain.delay')
+    @patch('ejudge_listener.views.make_terminal_chain')
     def test_terminal(self, mock_terminal_delay):
         self.assert200(self.send_request(self.valid_terminal_int_request))
         self.assert200(self.send_request(self.valid_terminal_str_request))
         self.assertEqual(mock_terminal_delay.call_count, 2)
 
-    @patch('ejudge_listener.views.send_non_terminal.delay')
+    @patch('ejudge_listener.views.make_non_terminal_chain')
     def test_non_terminal(self, mock_non_terminal_delay):
         self.assert200(self.send_request(self.valid_non_terminal_int_request))
         self.assert200(self.send_request(self.valid_non_terminal_str_request))
