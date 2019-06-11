@@ -261,6 +261,7 @@ class EjudgeRun(db.Model):
         13: "Broken pipe: write to pipe with no readers",
         14: "Timer signal",
         15: "Termination signal",
+        25: 'File size limit exceeded',
     }
 
     @db.reconstructor
@@ -380,8 +381,8 @@ class EjudgeRun(db.Model):
         if 'term-signal' in judge_info:
             test_protocol['extra'] = 'Signal %(signal)s. %(description)s' % {
                 'signal': judge_info['term-signal'],
-                'description': self.SIGNAL_DESCRIPTION[
-                    judge_info['term-signal']],
+                'description': self.SIGNAL_DESCRIPTION.get(
+                    judge_info['term-signal'], 'Undefined signal'),
             }
         if 'exit-code' in judge_info:
             test_protocol['extra'] = test_protocol.get(
