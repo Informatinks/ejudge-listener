@@ -24,4 +24,8 @@ services:
     depends_on:
       - mariadb
 
+    environment:
+      - FLASK_APP=ejudge_listener.wsgi:application
+      - SQLALCHEMY_DATABASE_URI=mysql+pymysql://root:123456@mariadb:3306/
+
     command: 'sh -c "sleep 10 && flask test --teamcity"'
