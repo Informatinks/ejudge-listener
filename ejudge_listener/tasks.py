@@ -10,8 +10,8 @@ from ejudge_listener.protocol.exceptions import ProtocolNotFoundError
 logger = get_task_logger(__name__)
 
 
-@shared_task(bind=True, max_retries=None, retry_backoff=True)
-def send_non_terminal(self, request_args):
+@shared_task(ignore_result=True, retry=False)
+def send_non_terminal(request_args):
     """Send non terminal status to ejudge front.
 
     We ignore result and not retry, because we get new status
@@ -20,15 +20,7 @@ def send_non_terminal(self, request_args):
     main logic around terminal statuses and we can afford to not
     send or loose some of non terminal statuses to ejudge front.
     """
-    try:
-        flow.send_terminal(request_args)
-    except RequestException as exc:
-        if is_4xx_error(exc):
-            logger.error('Received status 4xx from rmatics. Rollback mongo')
-            mongo_rollback(request_args)
-        else:
-            logger.exception('Got unexpected error while request to rmatics. Retrying task')
-            self.retry(exc=exc, countdown=2 * self.request.retries)
+    flow.send_non_terminal(request_args)
 
 
 @shared_task(bind=True, default_retry_delay=2, retry_backoff=True)
