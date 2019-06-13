@@ -1,6 +1,6 @@
 FROM python:3.6-alpine
 
-ENV FLASK_APP=listener:app
+ENV FLASK_APP=ejudge_listener.wsgi.py:application
 ENV PIP_INDEX_URL=https://registry.tcsbank.ru/repository/pypi-all/simple/
 
 COPY . /code
