@@ -14,9 +14,6 @@ services:
       context: ..
       dockerfile: ./docker/Dockerfile
 
-    volumes:
-      - ../configs/testing.cfg:/code/configs/production.cfg
-
     env_file:
       - test.env
     depends_on:
