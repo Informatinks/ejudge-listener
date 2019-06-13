@@ -12,13 +12,9 @@ from tests.unit.base import TestCase, REQUEST_ARGS, PROTOCOL, RUN_WITH_MONGO_ID
 
 class TestSendNonTerminal(TestCase):
     @patch('requests.post')
-    @unittest.skip(
-        'Can\'t reproduce real celery.Task here, '
-        'need py.test with ready celery fixtures or real workers, brokers here.'
-    )
-    # TODO: rewrite test with py.test celery fixtures or delete.
     def test_send_non_terminal_with_working_front(self, mock_post):
         send_non_terminal(REQUEST_ARGS)
+        mock_post.assert_called_once()
 
 
 @patch('ejudge_listener.tasks.load_protocol.retry', side_effect=Retry)
