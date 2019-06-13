@@ -56,4 +56,4 @@ def send_terminal(self, data):
             mongo_rollback(data)
         else:
             logger.exception('Got unexpected error while request to rmatics. Retrying task')
-            self.retry(exc=exc, countdown=2)
+            self.retry(exc=exc, countdown=2 * self.request.retries)
