@@ -493,6 +493,7 @@ class EjudgeRun(db.Model):
 
         # If we have 0 tests, Ejudge has not yet completed
         # writing tests to filesystem. Raise error to retry retrieve.
+        # Avoids possible race contidion case.
         if len(tests) == 0:
             raise TestsNotFoundError
 

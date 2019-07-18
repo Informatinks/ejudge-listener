@@ -5,7 +5,7 @@ from celery.exceptions import Retry
 from requests import HTTPError, Timeout
 from sqlalchemy.orm.exc import NoResultFound
 
-from ejudge_listener.protocol.exceptions import ProtocolNotFoundError
+from ejudge_listener.protocol.exceptions import ProtocolNotFoundError, TestsNotFoundError
 from ejudge_listener.tasks import send_non_terminal, load_protocol, send_terminal
 from tests.unit.base import TestCase, REQUEST_ARGS, PROTOCOL, RUN_WITH_MONGO_ID
 
@@ -35,6 +35,13 @@ class TestLoadProtocol(TestCase):
         with self.assertRaises(Retry):
             load_protocol(REQUEST_ARGS)
         mock_retry.assert_called_once()
+
+    @patch('ejudge_listener.flow.load_protocol', side_effect=TestsNotFoundError)
+    def test_protocol_tests_not_exist(self, mock_flow_load_protocol, mock_retry):
+        with self.assertRaises(Retry):
+            load_protocol(REQUEST_ARGS)
+        mock_retry.assert_called_once()
+
 
 
 @patch('ejudge_listener.tasks.send_terminal.retry', side_effect=Retry)
