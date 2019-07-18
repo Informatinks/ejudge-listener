@@ -5,7 +5,7 @@ from sqlalchemy.orm.exc import NoResultFound
 
 from ejudge_listener import flow
 from ejudge_listener.flow import is_4xx_error, mongo_rollback
-from ejudge_listener.protocol.exceptions import ProtocolNotFoundError
+from ejudge_listener.protocol.exceptions import ProtocolNotFoundError, TestsNotFoundError
 
 logger = get_task_logger(__name__)
 
@@ -32,6 +32,9 @@ def load_protocol(self, request_args):
     except NoResultFound:
         logger.error(f'Run not found. Request args={request_args}')
         self.request.chain = None  # Stop chain
+    except TestsNotFoundError as exc:
+        logger.warning(f'Tests not found. Retrying task. Request args={request_args}')
+        raise self.retry(exc=exc)
     except ProtocolNotFoundError as exc:
         logger.warning(f'Protocol not found. Retrying task. Request args={request_args}')
         raise self.retry(exc=exc)
