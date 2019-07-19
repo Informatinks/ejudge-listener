@@ -36,13 +36,6 @@ class TestLoadProtocol(TestCase):
             load_protocol(REQUEST_ARGS)
         mock_retry.assert_called_once()
 
-    @patch('ejudge_listener.flow.load_protocol', side_effect=TestsNotFoundError)
-    def test_protocol_tests_not_exist(self, mock_flow_load_protocol, mock_retry):
-        with self.assertRaises(Retry):
-            load_protocol(REQUEST_ARGS)
-        mock_retry.assert_called_once()
-
-
 
 @patch('ejudge_listener.tasks.send_terminal.retry', side_effect=Retry)
 @patch('ejudge_listener.tasks.mongo_rollback')
