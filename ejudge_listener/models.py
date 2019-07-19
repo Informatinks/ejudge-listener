@@ -510,5 +510,9 @@ class EjudgeRun(db.Model):
 
     @lazy
     def fetch_tested_protocol_data(self):
-        self.xml = xml.dom.minidom.parseString(str(self.protocol))
-        self.parsetests()
+        try:
+            self.xml = xml.dom.minidom.parseString(str(self.protocol))
+            self.parsetests()
+        except xml.parsers.expat.ExpatError as exc:
+            # If there are parse errors
+            raise TestsNotFoundError
