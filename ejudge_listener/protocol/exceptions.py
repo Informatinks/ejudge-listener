@@ -2,6 +2,10 @@ class ProtocolNotFoundError(FileNotFoundError):
     pass
 
 
+class TestsNotFoundError(ProtocolNotFoundError):
+    pass
+
+
 class XmlReportNotFoundError(ProtocolNotFoundError):
     pass
 

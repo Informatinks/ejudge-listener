@@ -1,3 +1,5 @@
+import xml
+
 from celery import shared_task
 from celery.utils.log import get_task_logger
 from requests import RequestException
@@ -5,7 +7,7 @@ from sqlalchemy.orm.exc import NoResultFound
 
 from ejudge_listener import flow
 from ejudge_listener.flow import is_4xx_error, mongo_rollback
-from ejudge_listener.protocol.exceptions import ProtocolNotFoundError
+from ejudge_listener.protocol.exceptions import ProtocolNotFoundError, TestsNotFoundError
 
 logger = get_task_logger(__name__)
 
@@ -23,18 +25,34 @@ def send_non_terminal(request_args):
     flow.send_non_terminal(request_args)
 
 
-@shared_task(bind=True, default_retry_delay=2, retry_backoff=True)
+@shared_task(bind=True, default_retry_delay=2, max_retries=3)
 def load_protocol(self, request_args):
     """ Load Ejudge run from database and load protocol from filesystem for this run.
     """
     try:
         return flow.load_protocol(request_args)
+
     except NoResultFound:
-        logger.error(f'Run not found. Request args={request_args}')
+        logger.error(f'Run not found. Aborting task. Request args={request_args}')
         self.request.chain = None  # Stop chain
+
+    except xml.parsers.expat.ExpatError:
+        logger.exception(f'XML parsing error. Aborting task. Request args={request_args}')
+        self.request.chain = None
+
+    except TestsNotFoundError as exc:
+        if self.request.retries < load_protocol.max_retries:
+            raise self.retry(exc=exc)
+        logger.warning('Tests not found. Max retries count exceed. Aborting.'
+                       f'Request args={request_args}')
+        self.request.chain = None
+
     except ProtocolNotFoundError as exc:
-        logger.warning(f'Protocol not found. Retrying task. Request args={request_args}')
-        raise self.retry(exc=exc)
+        if self.request.retries < load_protocol.max_retries:
+            raise self.retry(exc=exc)
+        logger.warning('Protocol not found. Max retries count exceed. Aborting.'
+                       f'Request args={request_args}')
+        self.request.chain = None
 
 
 @shared_task

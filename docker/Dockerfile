@@ -8,4 +8,4 @@ WORKDIR /code
 
 RUN pip3 install -r requirements.txt -r dev-requirements.txt
 
-CMD sleep 30 && flask test
+CMD sleep 10 && flask test

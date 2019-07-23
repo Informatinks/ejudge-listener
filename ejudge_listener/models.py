@@ -7,7 +7,7 @@ from flask import current_app
 
 from ejudge_listener.extensions import db
 from ejudge_listener.protocol.ejudge_archive import EjudgeArchiveReader
-from ejudge_listener.protocol.exceptions import AuditNotFoundError
+from ejudge_listener.protocol.exceptions import AuditNotFoundError, TestsNotFoundError
 from ejudge_listener.protocol.run import (
     safe_open,
     submit_path,
@@ -19,6 +19,7 @@ from ejudge_listener.protocol.run import (
 
 from .rmatics.ejudge.serve_internal import EjudgeContestCfg
 from .rmatics.utils.json_type import JsonType
+
 
 
 class Problem(db.Model):
@@ -419,75 +420,83 @@ class EjudgeRun(db.Model):
         self.host = None
         self.maxtime = None
 
-        if self.xml:
-            rep = self.xml.getElementsByTagName('testing-report')[0]
-            self.tests_count = int(rep.getAttribute('run-tests'))
-            self.status_string = rep.getAttribute('status')
+        if not self.xml:
+            raise TestsNotFoundError
 
-            compiler_output_elements = self.xml.getElementsByTagName(
-                'compiler_output')
-            if compiler_output_elements:
-                self.compiler_output = getattr(
-                    compiler_output_elements[0].firstChild, 'nodeValue', ''
-                )
+        rep = self.xml.getElementsByTagName('testing-report')[0]
+        self.tests_count = int(rep.getAttribute('run-tests'))
+        self.status_string = rep.getAttribute('status')
 
-            host_elements = self.xml.getElementsByTagName('host')
-            if host_elements:
-                self.host = host_elements[0].firstChild.nodeValue
+        compiler_output_elements = self.xml.getElementsByTagName(
+            'compiler_output')
+        if compiler_output_elements:
+            self.compiler_output = getattr(
+                compiler_output_elements[0].firstChild, 'nodeValue', ''
+            )
 
-            for node in self.xml.getElementsByTagName('test'):
-                number = node.getAttribute('num')
-                status = node.getAttribute('status')
-                time = node.getAttribute('time')
-                real_time = node.getAttribute('real-time')
-                max_memory_used = node.getAttribute('max-memory-used')
-                self.test_count += 1
+        host_elements = self.xml.getElementsByTagName('host')
+        if host_elements:
+            self.host = host_elements[0].firstChild.nodeValue
 
-                try:
-                    time = int(time)
-                except ValueError:
-                    time = 0
+        for node in self.xml.getElementsByTagName('test'):
+            number = node.getAttribute('num')
+            status = node.getAttribute('status')
+            time = node.getAttribute('time')
+            real_time = node.getAttribute('real-time')
+            max_memory_used = node.getAttribute('max-memory-used')
+            self.test_count += 1
 
-                try:
-                    real_time = int(real_time)
-                except ValueError:
-                    real_time = 0
-
-                test = {
-                    'status': status,
-                    'string_status': get_string_status(status),
-                    'real_time': real_time,
-                    'time': time,
-                    'max_memory_used': max_memory_used,
-                }
-                judge_info = {}
-
-                for _type in (
-                        'input', 'output', 'correct', 'stderr', 'checker'):
-                    lst = node.getElementsByTagName(_type)
-                    if lst and lst[0].firstChild:
-                        judge_info[_type] = lst[0].firstChild.nodeValue
-                    else:
-                        judge_info[_type] = ''
-
-                if node.hasAttribute('term-signal'):
-                    judge_info['term-signal'] = int(
-                        node.getAttribute('term-signal'))
-                if node.hasAttribute('exit-code'):
-                    judge_info['exit-code'] = int(
-                        node.getAttribute('exit-code'))
-
-                self.judge_tests_info[number] = judge_info
-                self.tests[number] = test
             try:
-                # print([test['time'] for test in self.tests.values()] +
-                # [test['real_time'] for test in self.tests.values()])
-                self.maxtime = max(
-                    [test['time'] for test in self.tests.values()]
-                    + [test['real_time'] for test in self.tests.values()]
-                )
+                time = int(time)
             except ValueError:
-                pass
+                time = 0
+
+            try:
+                real_time = int(real_time)
+            except ValueError:
+                real_time = 0
+
+            test = {
+                'status': status,
+                'string_status': get_string_status(status),
+                'real_time': real_time,
+                'time': time,
+                'max_memory_used': max_memory_used,
+            }
+            judge_info = {}
+
+            for _type in (
+                    'input', 'output', 'correct', 'stderr', 'checker'):
+                lst = node.getElementsByTagName(_type)
+                if lst and lst[0].firstChild:
+                    judge_info[_type] = lst[0].firstChild.nodeValue
+                else:
+                    judge_info[_type] = ''
+
+            if node.hasAttribute('term-signal'):
+                judge_info['term-signal'] = int(
+                    node.getAttribute('term-signal'))
+            if node.hasAttribute('exit-code'):
+                judge_info['exit-code'] = int(
+                    node.getAttribute('exit-code'))
+
+            self.judge_tests_info[number] = judge_info
+            self.tests[number] = test
+        try:
+            # print([test['time'] for test in self.tests.values()] +
+            # [test['real_time'] for test in self.tests.values()])
+            self.maxtime = max(
+                [test['time'] for test in self.tests.values()]
+                + [test['real_time'] for test in self.tests.values()]
+            )
+        except ValueError:
+            pass
+
+        # If we have 0 tests, Ejudge has not yet completed
+        # writing tests to filesystem. Raise error to retry retrieve.
+        # Avoids possible race contidion case.
+        if len(self.tests) == 0:
+            raise TestsNotFoundError
 
     @lazy
     def _get_protocol(self):
