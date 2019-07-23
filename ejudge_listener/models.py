@@ -21,6 +21,7 @@ from .rmatics.ejudge.serve_internal import EjudgeContestCfg
 from .rmatics.utils.json_type import JsonType
 
 
+
 class Problem(db.Model):
     __table_args__ = {'schema': 'moodle'}
     __tablename__ = 'mdl_problems'
@@ -510,9 +511,5 @@ class EjudgeRun(db.Model):
 
     @lazy
     def fetch_tested_protocol_data(self):
-        try:
-            self.xml = xml.dom.minidom.parseString(str(self.protocol))
-            self.parsetests()
-        except xml.parsers.expat.ExpatError as exc:
-            # If there are parse errors
-            raise TestsNotFoundError
+        self.xml = xml.dom.minidom.parseString(str(self.protocol))
+        self.parsetests()
