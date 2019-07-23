@@ -38,7 +38,7 @@ class TestLoadProtocol(TestCase):
         mock_retry.assert_not_called()
 
     @patch('ejudge_listener.flow.load_protocol', side_effect=TestsNotFoundError)
-    def test_tests_not_found_retry(self, mock_flow_load_protocol, mock_retry):
+    def test_tests_not_found(self, mock_flow_load_protocol, mock_retry):
         with self.assertRaises(Retry):
             load_protocol(REQUEST_ARGS)
         mock_retry.assert_called_once()
