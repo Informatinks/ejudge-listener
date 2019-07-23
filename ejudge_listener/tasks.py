@@ -1,3 +1,5 @@
+import xml
+
 from celery import shared_task
 from celery.utils.log import get_task_logger
 from requests import RequestException
@@ -23,21 +25,30 @@ def send_non_terminal(request_args):
     flow.send_non_terminal(request_args)
 
 
-@shared_task(bind=True, default_retry_delay=2, retry_backoff=True)
+@shared_task(bind=True, default_retry_delay=2, retry_backoff=True, max_retries=10)
 def load_protocol(self, request_args):
     """ Load Ejudge run from database and load protocol from filesystem for this run.
     """
     try:
         return flow.load_protocol(request_args)
     except NoResultFound:
-        logger.error(f'Run not found. Request args={request_args}')
+        logger.error(f'Run not found. Aborting task. Request args={request_args}')
         self.request.chain = None  # Stop chain
+    except xml.parsers.expat.ExpatError:
+        logger.exception(f'XML parsing error. Aborting task. Request args={request_args}')
+        self.request.chain = None
     except TestsNotFoundError as exc:
-        logger.warning(f'Tests not found. Retrying task. Request args={request_args}')
-        raise self.retry(exc=exc)
+        if self.request.retries == load_protocol.max_retries:
+            logger.warning(f'Tests not found. Retrying task. Request args={request_args}')
+            self.request.chain = None
+        else:
+            raise self.retry(exc=exc)
     except ProtocolNotFoundError as exc:
-        logger.warning(f'Protocol not found. Retrying task. Request args={request_args}')
-        raise self.retry(exc=exc)
+        if self.request.retries == load_protocol.max_retries:
+            logger.warning(f'Protocol not found. Retrying task. Request args={request_args}')
+            self.request.chain = None
+        else:
+            raise self.retry(exc=exc)
 
 
 @shared_task

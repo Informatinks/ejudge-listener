@@ -1,11 +1,11 @@
-import unittest
+import xml
 from unittest.mock import patch, Mock
 
 from celery.exceptions import Retry
 from requests import HTTPError, Timeout
 from sqlalchemy.orm.exc import NoResultFound
 
-from ejudge_listener.protocol.exceptions import ProtocolNotFoundError, TestsNotFoundError
+from ejudge_listener.protocol.exceptions import TestsNotFoundError, ProtocolNotFoundError
 from ejudge_listener.tasks import send_non_terminal, load_protocol, send_terminal
 from tests.unit.base import TestCase, REQUEST_ARGS, PROTOCOL, RUN_WITH_MONGO_ID
 
@@ -30,8 +30,21 @@ class TestLoadProtocol(TestCase):
         self.assertIsNone(load_protocol.request.chain)
         mock_retry.assert_not_called()
 
+    @patch('ejudge_listener.flow.load_protocol', side_effect=xml.parsers.expat.ExpatError)
+    def test_xml_parsing_error(self, mock_flow_load_protocol, mock_retry):
+        """Raised if protocol file is empty and contains invalid XML"""
+        load_protocol(REQUEST_ARGS)
+        self.assertIsNone(load_protocol.request.chain)
+        mock_retry.assert_not_called()
+
+    @patch('ejudge_listener.flow.load_protocol', side_effect=TestsNotFoundError)
+    def test_tests_not_found_retry(self, mock_flow_load_protocol, mock_retry):
+        with self.assertRaises(Retry):
+            load_protocol(REQUEST_ARGS)
+        mock_retry.assert_called_once()
+
     @patch('ejudge_listener.flow.load_protocol', side_effect=ProtocolNotFoundError)
-    def test_protocol_not_exist(self, mock_flow_load_protocol, mock_retry):
+    def test_protocol_not_found(self, mock_flow_load_protocol, mock_retry):
         with self.assertRaises(Retry):
             load_protocol(REQUEST_ARGS)
         mock_retry.assert_called_once()
@@ -42,7 +55,7 @@ class TestLoadProtocol(TestCase):
 class TestSendTerminal(TestCase):
     @patch('requests.post')
     def test_ok_response_from_ejudge_front(
-        self, mock_post, mock_mongo_rollback, mock_retry
+            self, mock_post, mock_mongo_rollback, mock_retry
     ):
         send_terminal(RUN_WITH_MONGO_ID)
         mock_mongo_rollback.assert_not_called()
@@ -50,7 +63,7 @@ class TestSendTerminal(TestCase):
 
     @patch('requests.post', side_effect=HTTPError(response=Mock(status_code=400)))
     def test_4xx_response_from_ejudge_front(
-        self, mock_post, mock_mongo_rollback, mock_retry
+            self, mock_post, mock_mongo_rollback, mock_retry
     ):
         send_terminal(RUN_WITH_MONGO_ID)
         mock_mongo_rollback.assert_called_once_with(RUN_WITH_MONGO_ID)
@@ -58,7 +71,7 @@ class TestSendTerminal(TestCase):
 
     @patch('requests.post', side_effect=HTTPError(response=Mock(status_code=500)))
     def test_5xx_response_from_ejudge_front(
-        self, mock_post, mock_mongo_rollback, mock_retry
+            self, mock_post, mock_mongo_rollback, mock_retry
     ):
         with self.assertRaises(Retry):
             send_terminal(RUN_WITH_MONGO_ID)
