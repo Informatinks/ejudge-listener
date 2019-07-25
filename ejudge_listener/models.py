@@ -30,12 +30,12 @@ from .rmatics.utils.json_type import JsonType
 
 # Following statuses should have at least one test in protocol
 EJDUGE_TESTED_STATUSES = (
-    'OK',
-    'PT',
-    'RE',
-    'TL',
-    'PE',
-    'WA',
+    0,  # OK
+    7,  # PT
+    2,  # RE
+    3,  # TL
+    4,  # PE
+    5,  # WA
 )
 
 
@@ -517,7 +517,7 @@ class EjudgeRun(db.Model):
             # dump protocol XML from memory to disk and
             # schedule task to reserve system
             # instead of raising TestsNotFoundError
-            if self.status_string in EJDUGE_TESTED_STATUSES:
+            if self.status in EJDUGE_TESTED_STATUSES:
                 dump_xml_protocol(self.protocol, self.run_id,
                                   config.DEBUG_PROTOCOL_DUMP_DIR)
 
