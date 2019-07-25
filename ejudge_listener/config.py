@@ -95,6 +95,8 @@ class BaseConfig:
     }
     worker_hijack_root_logger = False
 
+    # Debug settings
+    DEBUG_PROTOCOL_DUMP_DIR = os.getenv('DEBUG_PROTOCOL_DUMP_DIR', '/tmp/protocols_dump')
 
 class DevConfig(BaseConfig):
     ...

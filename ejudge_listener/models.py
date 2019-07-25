@@ -16,10 +16,19 @@ from ejudge_listener.protocol.run import (
     get_protocol_from_file,
     read_file_unknown_encoding
 )
-
+from ejudge_listener.rmatics.utils.debug import dump_xml_protocol
 from .rmatics.ejudge.serve_internal import EjudgeContestCfg
 from .rmatics.utils.json_type import JsonType
 
+# Following statuses should have at least one test in protocol
+EJDUGE_TESTED_STATUSES = (
+    'OK',
+    'PT',
+    'RE',
+    'TL',
+    'PE',
+    'WA',
+)
 
 
 class Problem(db.Model):
@@ -496,7 +505,12 @@ class EjudgeRun(db.Model):
         # writing tests to filesystem. Raise error to retry retrieve.
         # Avoids possible race contidion case.
         if len(self.tests) == 0:
-            raise TestsNotFoundError
+            # If tests should exist for current run status,
+            # dump protocol XML from memory to disk
+            # instead of raising TestsNotFoundError
+            if self.status_string in EJDUGE_TESTED_STATUSES:
+                dump_xml_protocol(self.protocol, self.run_id)
+                raise TestsNotFoundError
 
     @lazy
     def _get_protocol(self):
