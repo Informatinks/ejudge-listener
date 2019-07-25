@@ -2,7 +2,15 @@ import os
 import xml
 import xml.dom.minidom
 import zipfile
+from urllib.parse import urlencode
 
+from werkzeug.utils import import_string
+
+from ejudge_listener.config import CONFIG_MODULE
+
+config = import_string(CONFIG_MODULE)
+
+import requests
 from flask import current_app
 
 from ejudge_listener.extensions import db
@@ -506,11 +514,29 @@ class EjudgeRun(db.Model):
         # Avoids possible race contidion case.
         if len(self.tests) == 0:
             # If tests should exist for current run status,
-            # dump protocol XML from memory to disk
+            # dump protocol XML from memory to disk and
+            # schedule task to reserve system
             # instead of raising TestsNotFoundError
             if self.status_string in EJDUGE_TESTED_STATUSES:
-                dump_xml_protocol(self.protocol, self.run_id)
-                raise TestsNotFoundError
+                dump_xml_protocol(self.protocol, self.run_id,
+                                  config.DEBUG_PROTOCOL_DUMP_DIR)
+
+                # Build request args
+                try:
+                    query_params = urlencode({
+                        'run_id': self.run_id,
+                        'contest_id': self.contest_id,
+                        'status': self.status,
+                    })
+                    url = '{0}?{1}'.format(
+                        config.RESERVE_LISTENER_SERVICE_URL,
+                        query_params)
+
+                    requests.get(url)
+                except Exception as exc:
+                    # If we can't send task to reserve system,
+                    # re-schedule task again not to waste data
+                    raise TestsNotFoundError
 
     @lazy
     def _get_protocol(self):
