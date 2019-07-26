@@ -39,6 +39,35 @@ EJDUGE_TESTED_STATUSES = (
 )
 
 
+def send_task_to_reserve_instance(run_id: int, contest_id: int, status: int) -> int:
+    """Send status to reverve ejudge-listener instance
+
+    :param run_id: Run id for query args
+    :param contest_id: Contest id to for query args
+    :param status: Status for query arfs
+
+    Raises request error if request fails.
+
+    @deprecated
+
+    :return: reeust status code
+    """
+
+    # Build request args
+    query_params = urlencode({
+        'run_id': run_id,
+        'contest_id': contest_id,
+        'status': status,
+    })
+    url = '{0}?{1}'.format(
+        config.RESERVE_LISTENER_SERVICE_URL,
+        query_params)
+
+    response = requests.get(url)
+
+    return response.status_code
+
+
 class Problem(db.Model):
     __table_args__ = {'schema': 'moodle'}
     __tablename__ = 'mdl_problems'
@@ -509,34 +538,16 @@ class EjudgeRun(db.Model):
         except ValueError:
             pass
 
-        # If we have 0 tests, Ejudge has not yet completed
-        # writing tests to filesystem. Raise error to retry retrieve.
-        # Avoids possible race contidion case.
+        # If we have 0 tests, Ejudge has not yet
+        # completed writing tests to filesystem.
         if len(self.tests) == 0:
             # If tests should exist for current run status,
             # dump protocol XML from memory to disk and
-            # schedule task to reserve system
-            # instead of raising TestsNotFoundError
+            # raise Error, which initiates task Retry.
+            # Avoids possible race contidion case.
             if self.status in EJDUGE_TESTED_STATUSES:
-                dump_xml_protocol(self.protocol, self.run_id,
-                                  config.DEBUG_PROTOCOL_DUMP_DIR)
-
-                # Build request args
-                try:
-                    query_params = urlencode({
-                        'run_id': self.run_id,
-                        'contest_id': self.contest_id,
-                        'status': self.status,
-                    })
-                    url = '{0}?{1}'.format(
-                        config.RESERVE_LISTENER_SERVICE_URL,
-                        query_params)
-
-                    requests.get(url)
-                except Exception as exc:
-                    # If we can't send task to reserve system,
-                    # re-schedule task again not to waste data
-                    raise TestsNotFoundError
+                dump_xml_protocol(self.protocol, self.run_id, config.DEBUG_PROTOCOL_DUMP_DIR)
+                raise TestsNotFoundError
 
     @lazy
     def _get_protocol(self):
