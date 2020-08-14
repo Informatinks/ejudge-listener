@@ -2,7 +2,15 @@ import os
 import xml
 import xml.dom.minidom
 import zipfile
+from urllib.parse import urlencode
 
+from werkzeug.utils import import_string
+
+from ejudge_listener.config import CONFIG_MODULE
+
+config = import_string(CONFIG_MODULE)
+
+import requests
 from flask import current_app
 
 from ejudge_listener.extensions import db
@@ -16,10 +24,48 @@ from ejudge_listener.protocol.run import (
     get_protocol_from_file,
     read_file_unknown_encoding
 )
-
+from ejudge_listener.rmatics.utils.debug import dump_xml_protocol
 from .rmatics.ejudge.serve_internal import EjudgeContestCfg
 from .rmatics.utils.json_type import JsonType
 
+# Following statuses should have at least one test in protocol
+EJDUGE_TESTED_STATUSES = (
+    0,  # OK
+    7,  # PT
+    2,  # RE
+    3,  # TL
+    4,  # PE
+    5,  # WA
+)
+
+
+def send_task_to_reserve_instance(run_id: int, contest_id: int, status: int) -> int:
+    """Send status to reverve ejudge-listener instance
+
+    :param run_id: Run id for query args
+    :param contest_id: Contest id to for query args
+    :param status: Status for query arfs
+
+    Raises request error if request fails.
+
+    @deprecated
+
+    :return: reeust status code
+    """
+
+    # Build request args
+    query_params = urlencode({
+        'run_id': run_id,
+        'contest_id': contest_id,
+        'status': status,
+    })
+    url = '{0}?{1}'.format(
+        config.RESERVE_LISTENER_SERVICE_URL,
+        query_params)
+
+    response = requests.get(url)
+
+    return response.status_code
 
 
 class Problem(db.Model):
@@ -265,6 +311,20 @@ class EjudgeRun(db.Model):
         25: 'File size limit exceeded',
     }
 
+    def submit_path(self, archive_type):
+        ARCHIVE_PATH = {
+            'audit' : current_app.config['AUDIT_PATH'],
+            'source': current_app.config['SOURCES_PATH'],
+            'report': current_app.config['PROTOCOLS_PATH'],
+            'output':  current_app.config['OUTPUT_PATH'],
+        }
+
+        if self.store_flags > 0:
+            #uuid case
+            return "{0}/{1:06d}/var/archive/uuid/{2}/{3}/{4}/{5}".format(current_app.config['CONTEST_PATH'], self.contest_id, self.run_uuid[0:2], self.run_uuid[2:4], self.run_uuid, archive_type)
+        else:
+            return submit_path(ARCHIVE_PATH[archive_type], self.contest_id, self.run_id)
+
     @db.reconstructor
     def init_on_load(self):
         self.out_path = "/home/judges/{0:06d}/var/archive/output/{1}/{2}/{3}/{4:06d}.zip".format(
@@ -280,8 +340,7 @@ class EjudgeRun(db.Model):
     @lazy
     def get_audit(self):
         try:
-            data = safe_open(submit_path(current_app.config['AUDIT_PATH'],
-                                         self.contest_id, self.run_id), 'r').read()
+            data = safe_open(self.submit_path('audit'), 'r').read()
         except FileNotFoundError:
             raise AuditNotFoundError  # TODO: исправить этот костыль, он относится к run.py:188
         if type(data) == bytes:
@@ -290,8 +349,7 @@ class EjudgeRun(db.Model):
 
     @lazy
     def get_sources(self):
-        data = safe_open(submit_path(current_app.config['SOURCES_PATH'],
-                                     self.contest_id, self.run_id), 'rb').read()
+        data = safe_open(self.submit_path('source'), 'rb').read()
         for encoding in ['utf-8', 'ascii', 'windows-1251']:
             try:
                 data = data.decode(encoding)
@@ -325,8 +383,7 @@ class EjudgeRun(db.Model):
     def get_output_archive(self):
         if "output_archive" not in self.__dict__:
             self.output_archive = EjudgeArchiveReader(
-                submit_path(current_app.config['OUTPUT_PATH'],
-                            self.contest_id, self.run_id))
+                self.submit_path('output'))
         return self.output_archive
 
     def get_test_full_protocol(self, test_num):
@@ -492,16 +549,20 @@ class EjudgeRun(db.Model):
         except ValueError:
             pass
 
-        # If we have 0 tests, Ejudge has not yet completed
-        # writing tests to filesystem. Raise error to retry retrieve.
-        # Avoids possible race contidion case.
+        # If we have 0 tests, Ejudge has not yet
+        # completed writing tests to filesystem.
         if len(self.tests) == 0:
-            raise TestsNotFoundError
+            # If tests should exist for current run status,
+            # dump protocol XML from memory to disk and
+            # raise Error, which initiates task Retry.
+            # Avoids possible race contidion case.
+            if self.status in EJDUGE_TESTED_STATUSES:
+                dump_xml_protocol(self.protocol, self.run_id, config.DEBUG_PROTOCOL_DUMP_DIR)
+                raise TestsNotFoundError
 
     @lazy
     def _get_protocol(self):
-        filename = submit_path(current_app.config['PROTOCOLS_PATH'],
-                               self.contest_id, self.run_id)
+        filename = self.submit_path('report')
         if filename:
             return get_protocol_from_file(filename)
         else:

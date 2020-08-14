@@ -95,6 +95,9 @@ class BaseConfig:
     }
     worker_hijack_root_logger = False
 
+    # Debug settings
+    DEBUG_PROTOCOL_DUMP_DIR = os.getenv('DEBUG_PROTOCOL_DUMP_DIR', '/tmp/protocols_dump')
+    RESERVE_LISTENER_SERVICE_URL = os.getenv('RESERVE_LISTENER_SERVICE_URL', 'http://127.0.0.1:5001/notification/update_run')
 
 class DevConfig(BaseConfig):
     ...
