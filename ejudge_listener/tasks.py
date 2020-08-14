@@ -25,7 +25,7 @@ def send_non_terminal(request_args):
     flow.send_non_terminal(request_args)
 
 
-@shared_task(bind=True, default_retry_delay=2, max_retries=3)
+@shared_task(bind=True, default_retry_delay=3, max_retries=5)
 def load_protocol(self, request_args):
     """ Load Ejudge run from database and load protocol from filesystem for this run.
     """

@@ -311,6 +311,20 @@ class EjudgeRun(db.Model):
         25: 'File size limit exceeded',
     }
 
+    def submit_path(self, archive_type):
+        ARCHIVE_PATH = {
+            'audit' : current_app.config['AUDIT_PATH'],
+            'source': current_app.config['SOURCES_PATH'],
+            'report': current_app.config['PROTOCOLS_PATH'],
+            'output':  current_app.config['OUTPUT_PATH'],
+        }
+
+        if self.store_flags > 0:
+            #uuid case
+            return "{0}/{1:06d}/var/archive/uuid/{2}/{3}/{4}/{5}".format(current_app.config['CONTEST_PATH'], self.contest_id, self.run_uuid[0:2], self.run_uuid[2:4], self.run_uuid, archive_type)
+        else:
+            return submit_path(ARCHIVE_PATH[archive_type], self.contest_id, self.run_id)
+
     @db.reconstructor
     def init_on_load(self):
         self.out_path = "/home/judges/{0:06d}/var/archive/output/{1}/{2}/{3}/{4:06d}.zip".format(
@@ -326,8 +340,7 @@ class EjudgeRun(db.Model):
     @lazy
     def get_audit(self):
         try:
-            data = safe_open(submit_path(current_app.config['AUDIT_PATH'],
-                                         self.contest_id, self.run_id), 'r').read()
+            data = safe_open(self.submit_path('audit'), 'r').read()
         except FileNotFoundError:
             raise AuditNotFoundError  # TODO: исправить этот костыль, он относится к run.py:188
         if type(data) == bytes:
@@ -336,8 +349,7 @@ class EjudgeRun(db.Model):
 
     @lazy
     def get_sources(self):
-        data = safe_open(submit_path(current_app.config['SOURCES_PATH'],
-                                     self.contest_id, self.run_id), 'rb').read()
+        data = safe_open(self.submit_path('source'), 'rb').read()
         for encoding in ['utf-8', 'ascii', 'windows-1251']:
             try:
                 data = data.decode(encoding)
@@ -371,8 +383,7 @@ class EjudgeRun(db.Model):
     def get_output_archive(self):
         if "output_archive" not in self.__dict__:
             self.output_archive = EjudgeArchiveReader(
-                submit_path(current_app.config['OUTPUT_PATH'],
-                            self.contest_id, self.run_id))
+                self.submit_path('output'))
         return self.output_archive
 
     def get_test_full_protocol(self, test_num):
@@ -551,8 +562,7 @@ class EjudgeRun(db.Model):
 
     @lazy
     def _get_protocol(self):
-        filename = submit_path(current_app.config['PROTOCOLS_PATH'],
-                               self.contest_id, self.run_id)
+        filename = self.submit_path('report')
         if filename:
             return get_protocol_from_file(filename)
         else:
