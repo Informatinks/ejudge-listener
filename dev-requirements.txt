@@ -1,8 +1,9 @@
-click==7.0
+-i https://pypi.org/simple/
+click==7.1.2
 flask-testing==0.7.1
 flask==1.0.2
 itsdangerous==1.1.0
-jinja2==2.10
+jinja2==2.11.3
 markupsafe==1.1.1
 teamcity-messages==1.23
-werkzeug==0.14.1
+werkzeug==1.0.1
